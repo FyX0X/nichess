@@ -33,12 +33,18 @@ namespace chess {
     std::string Position::ToString() const {
         std::stringstream boardStream;
         // reverse order since row 0 is at bottom
-        for (const auto& row : std::views::reverse(board_)) {
+        boardStream << '\n' << (active_player_ == Player::White ? "White" : "Black") << " to play.\n";
+        boardStream << "  _________________\n";
+        for (int row_index = 7; row_index >= 0; --row_index) {
+            const auto& row = board_[row_index];
+            boardStream << row_index + 1 << "| ";
             for (const Piece& piece : row) {
                 boardStream << piece.ToChar() << ' ';
             }
-            boardStream << '\n';
+            boardStream << "|\n";
         }
+        boardStream << "  -----------------\n";
+        boardStream << "   a b c d e f g h \n";
         return boardStream.str();
     }
 
