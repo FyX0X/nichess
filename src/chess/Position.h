@@ -7,6 +7,8 @@
 
 #include <string>
 #include <array>
+#include <vector>
+
 #include "Piece.h"
 
 namespace chess {
@@ -16,6 +18,13 @@ namespace chess {
         bool white_queenside = true;
         bool black_kingside = true;
         bool black_queenside = true;
+    };
+
+    struct Coordinates {
+        uint8_t row;
+        uint8_t column;
+
+        bool operator==(const Coordinates&) const = default;
     };
 
     class Position {
@@ -36,6 +45,7 @@ namespace chess {
 
         [[nodiscard]] const std::array<Piece, 8>& GetRow(uint8_t row) const { return board_[row]; }
         [[nodiscard]] Piece GetPiece(uint8_t row, uint8_t column) const { return board_[row][column]; }
+        [[nodiscard]] Piece GetPiece(Coordinates coords) const { return board_[coords.row][coords.column]; }
         [[nodiscard]] Player GetActivePlayer() const { return active_player_; }
 
         [[nodiscard]] CastlingRights GetCastlingRights() const { return castling_rights_; }
@@ -48,6 +58,8 @@ namespace chess {
 
     private:
 
+        void RecomputeRemainingPieces();
+
         // each char represents a board cell.
         // coordinates are row order (e.g: [0, 2] -> a3, [7][3] -> h4)
         std::array<std::array<Piece, 8>, 8> board_;
@@ -58,6 +70,8 @@ namespace chess {
         int move_count_ = 1;
 
 
+        // duplicate data for faster iteration through pieces
+        std::vector<Coordinates> piece_coordinates_ = {};
 
     };
 } // chess

@@ -16,8 +16,9 @@ namespace chess {
     {}
 
     Position::Position(const std::array<std::array<Piece, 8>, 8> &board) :
-        board_(board)
-    {}
+        board_(board) {
+        RecomputeRemainingPieces();
+    }
 
     Position::Position(const std::array<std::array<Piece, 8>, 8> &board,
                        Player active_player, const CastlingRights& castling_rights,
@@ -27,8 +28,9 @@ namespace chess {
         castling_rights_(castling_rights),
         en_passant_(en_passant),
         half_move_clock_(half_move_clock),
-        move_count_(move_count)
-    {}
+        move_count_(move_count) {
+        RecomputeRemainingPieces();
+    }
 
     std::string Position::ToString() const {
         std::stringstream boardStream;
@@ -48,4 +50,20 @@ namespace chess {
         return boardStream.str();
     }
 
+
+    void Position::RecomputeRemainingPieces() {
+        piece_coordinates_.clear();
+        for (uint8_t row = 0; row < 8; ++row) {
+            for (uint8_t col = 0; col < 8; ++col) {
+                Piece piece = board_[row][col];
+                if (piece.IsEmpty()) {
+                    continue;
+                }
+                piece_coordinates_.push_back({
+                    .row = row,
+                    .column = col
+                });
+            }
+        }
+    }
 } // chess

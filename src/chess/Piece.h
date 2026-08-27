@@ -37,6 +37,10 @@ namespace chess {
         static Piece FromChar(char c);
 
         static constexpr Piece Empty() { return { .type = PieceType::None, .player = Player::None }; }
+
+
+        bool operator==(const Piece&) const = default;
+
     };
 
 } // chess
