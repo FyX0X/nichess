@@ -1,0 +1,12 @@
+rnbq3r/5pkB/p3N1p1/1pbnP3/7Q/8/PP3PPP/RNB2RK1 b - - 0 16
+
+section separated by space:
+board_position(****/***/***/...)
+active_color('w' or 'b')
+castling_availability('-' or part of KQkq)
+en_passant('-' or 'a3', 'f6' or similar)
+half_move_clock_since_pawn_or_capture('24')
+full_move_count
+
+black pieces : lowercase
+white : uppercase
