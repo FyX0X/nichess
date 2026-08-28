@@ -77,6 +77,8 @@ namespace chess {
 
     private:
 
+        static int GetPawnStartingRank(Player player);
+
         void RecomputeRemainingPieces();
 
         [[nodiscard]] bool CouldPieceBeTaken(const Piece& piece) const;

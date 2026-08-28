@@ -4,7 +4,7 @@
 
 #include "Position.h"
 
-#include <iostream>
+#include <print>
 #include <sstream>
 #include <ranges>
 
@@ -14,21 +14,21 @@ namespace chess {
 
 #pragma region Constants
 
-    constexpr std::vector<Coordinates> kOrthogonalDirections = {
+    static const std::vector<Coordinates> kOrthogonalDirections = {
         {.row = 1, .column = 0},
         {.row = 0, .column = 1},
         {.row = -1, .column = 0},
         {.row = 0, .column = -1}
     };
 
-    constexpr std::vector<Coordinates> kDiagonalDirections = {
+    static const std::vector<Coordinates> kDiagonalDirections = {
         {.row = 1, .column = 1},
         {.row = -1, .column = 1},
         {.row = -1, .column = -1},
         {.row = 1, .column = -1}
     };
 
-    constexpr std::vector<Coordinates> kAllDirections = {
+    static const std::vector<Coordinates> kAllDirections = {
         {.row = 1, .column = 0},
         {.row = 0, .column = 1},
         {.row = -1, .column = 0},
@@ -39,7 +39,7 @@ namespace chess {
         {.row = 1, .column = -1}
     };
 
-    constexpr std::vector<Coordinates> kKnightDirections = {
+    static const std::vector<Coordinates> kKnightDirections = {
         {.row = 2, .column = 1},
         {.row = 1, .column = 2},
         {.row = -1, .column = 2},
@@ -50,6 +50,21 @@ namespace chess {
         {.row = 2, .column = -1}
     };
 
+
+#pragma endregion
+
+#pragma region Static Functions
+
+    int Position::GetPawnStartingRank(Player player) {
+        switch (player) {
+            case Player::White:
+                return 1; // #2
+            case Player::Black:
+                return 6; // #7
+            default:
+                return -1;
+        }
+    }
 
 #pragma endregion
 
@@ -107,6 +122,7 @@ namespace chess {
                 });
             }
         }
+        std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({} still on board)", piece_coordinates_.size());
     }
 
 
@@ -123,8 +139,13 @@ namespace chess {
     std::vector<Move> Position::GetLegalMoves() const {
         std::vector<Move> moves;
         for (const Coordinates& coord : piece_coordinates_) {
+            if (GetPiece(coord).player != active_player_) {
+                continue;
+            }
             moves.append_range(GetLegalMovesFromCoordinates(coord));
+            std::println("generated {} moves.", GetLegalMovesFromCoordinates(coord).size()); // TODO remove
         }
+        return moves;
     }
 
 
@@ -134,21 +155,28 @@ namespace chess {
             return {};
         }
 
+        std::println("generating moves from coord ({},{})", from.row, from.column);
         switch (piece.type) {
-            case PieceType::None:
-                return {};
             case PieceType::Pawn:
+                std::println("PAWN MOVES:");
                 return GeneratePawnMoves(from);
             case PieceType::Knight:
+                std::println("KNIGHT MOVES:");
                 return GenerateKnightMoves(from);
             case PieceType::Bishop:
+                std::println("BISHOP MOVES:");
                 return GenerateBishopMoves(from);
             case PieceType::Rook:
+                std::println("ROOK MOVES:");
                 return GenerateRookMoves(from);
             case PieceType::Queen:
+                std::println("QUEEN MOVES:");
                 return GenerateQueenMoves(from);
             case PieceType::King:
+                std::println("KING MOVES:");
                 return GenerateKingMoves(from);
+            default:
+                return {};
         }
     }
 
@@ -156,6 +184,9 @@ namespace chess {
         std::vector<Move> moves;
         for (const Coordinates& dir : directions) {
             Coordinates to = from + dir;
+            if (!to.IsValid()) {
+                continue;
+            }
             Piece piece = GetPiece(to);
             if (piece.IsEmpty() || CouldPieceBeTaken(piece)) {
                 moves.push_back({.from = from, .to = to});
@@ -166,25 +197,23 @@ namespace chess {
 
     std::vector<Move> Position::GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions) const {
         std::vector<Move> moves;
-
-        Player opponent = (active_player_ == Player::White) ? Player::Black : Player::White;
-
-        int row = from.row;
-        int col = from.column;
-
-
         // go in all directions
+
         for (const Coordinates& dir : directions) {
+            // std::println("from: ({},{}), current dir: ({},{})", from.row, from.column, dir.row, dir.column);
             for (Coordinates to = from + dir; to.IsValid(); to += dir ) {
+                // std::println("from: ({},{}), to: ({},{})", from.row, from.column, to.row, to.column);
                 Piece piece = GetPiece(to);
                 if (piece.IsEmpty()) {
                     moves.push_back({.from = from, .to = to});
+                    // std::println("({},{}) is empty, adding move to list", to.row, to.column);
                     continue;
                 }
                 if (CouldPieceBeTaken(piece)) {
                     moves.push_back( {.from = from, .to = to});
-                    break;
+                    // std::println("({},{}) is enemy, adding move to list", to.row, to.column);
                 }
+                break;
             }
         }
         return moves;
@@ -192,6 +221,40 @@ namespace chess {
 
     std::vector<Move> Position::GeneratePawnMoves(const Coordinates& from) const {
         // TODO
+        std::println("pawn moves from ({},{}):", from.row, from.column);
+
+        std::vector<Move> moves;
+
+        // moving straight
+        int dy = (active_player_ == Player::White) ? 1 : -1;
+        Coordinates direction = {.row = dy, .column = 0};
+
+        Coordinates to = from + direction;
+        std::println("testing coord ({},{})", to.row, to.column);
+        if (to.IsValid() && GetPiece(to).IsEmpty()) {
+            moves.push_back({.from = from, .to = to});
+
+            // second step if starting row and unobstructed.
+            if (from.row == GetPawnStartingRank(active_player_)) {
+                to += direction;
+                std::println("testing coord ({},{})", to.row, to.column);
+                if (to.IsValid() && GetPiece(to).IsEmpty()) {
+                    moves.push_back({.from = from, .to = to});
+                }
+            }
+        }
+
+        // Taking pieces diagonally
+        std::vector<Coordinates> take_directions = { {.row = dy, .column = -1}, {.row = dy, .column = 1}};
+        for (Coordinates take_direction : take_directions) {
+            to = from + take_direction;
+            if (to.IsValid() && CouldPieceBeTaken(GetPiece(to))) {
+                moves.push_back({.from = from, .to = to});
+            }
+        }
+
+        std::println("pawn moves from ({},{}): count: {}", from.row, from.column, moves.size());
+        return moves;
     }
 
     std::vector<Move> Position::GenerateKnightMoves(const Coordinates& from) const {
