@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+#include "Coordinates.h"
+
 namespace chess {
 
     enum class PieceType : char {
@@ -42,6 +44,22 @@ namespace chess {
         bool operator==(const Piece&) const = default;
 
     };
+
+    constexpr Piece kEmptyPiece = { .type = PieceType::None, .player = Player::None };
+
+    constexpr Piece kWhitePawn = { .type = PieceType::Pawn, .player = Player::White };
+    constexpr Piece kWhiteKnight = { .type = PieceType::Knight, .player = Player::White };
+    constexpr Piece kWhiteBishop = { .type = PieceType::Bishop, .player = Player::White };
+    constexpr Piece kWhiteRook = { .type = PieceType::Rook, .player = Player::White };
+    constexpr Piece kWhiteQueen{ .type = PieceType::Queen, .player = Player::White };
+    constexpr Piece kWhiteKing{ .type = PieceType::King, .player = Player::White };
+
+    constexpr Piece kBlackPawn = { .type = PieceType::Pawn, .player = Player::Black };
+    constexpr Piece kBlackKnight = { .type = PieceType::Knight, .player = Player::Black };
+    constexpr Piece kBlackBishop = { .type = PieceType::Bishop, .player = Player::Black };
+    constexpr Piece kBlackRook = { .type = PieceType::Rook, .player = Player::Black };
+    constexpr Piece kBlackQueen{ .type = PieceType::Queen, .player = Player::Black };
+    constexpr Piece kBlackKing{ .type = PieceType::King, .player = Player::Black };
 
 } // chess
 

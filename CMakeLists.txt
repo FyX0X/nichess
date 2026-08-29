@@ -15,6 +15,9 @@ add_executable(nichess src/main.cpp
         src/notation/FEN.h
         src/utility/string_utils.h
         src/utility/string_utils.cpp
+        src/chess/Coordinates.h
+        src/chess/Move.h
+        src/chess/CastlingRights.h
 )
 
 
