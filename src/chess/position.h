@@ -20,7 +20,7 @@ namespace chess {
     class Position {
     public:
         Position();
-        explicit Position(const std::array<std::array<Piece, 8>, 8>& board);
+        // explicit Position(const std::array<std::array<Piece, 8>, 8>& board);
         Position(const std::array<std::array<Piece, 8>, 8>& board,
                  Player active_player,
                  const CastlingRights& castling_rights,
@@ -74,7 +74,7 @@ namespace chess {
         void EnsurePossibleCastlingRights();
 
         std::vector<Move>& GetLegalMovesForPlayer(Player player); // modifiable version
-        std::array<std::array<bool, 8>, 8>& GetPlayerReachableSquares(Player player) { // modifiable version
+        std::array<std::array<bool, 8>, 8>& GetPlayerReachableSquares(const Player player) { // modifiable version
             return (player == Player::White) ? white_reachable_ : black_reachable_;
         }
 
