@@ -32,21 +32,21 @@ namespace chess {
 
     constexpr Coordinates kWhiteKingSquare = { .row = 0, .column = 4 };
     constexpr Coordinates kWhiteQueenSquare = { .row = 0, .column = 3 };
-    constexpr Coordinates kWhiteRookKingsideSquare = { .row = 0, .column = 0 };
-    constexpr Coordinates kWhiteRookQueensideSquare = { .row = 0, .column = 7 };
-    constexpr Coordinates kWhiteKnightKingsideSquare = { .row = 0, .column = 1 };
-    constexpr Coordinates kWhiteKnightQueensideSquare = { .row = 0, .column = 6 };
-    constexpr Coordinates kWhiteBishopKingsideSquare = { .row = 0, .column = 2 };
-    constexpr Coordinates kWhiteBishopQueensideSquare = { .row = 0, .column = 3 };
+    constexpr Coordinates kWhiteRookKingsideSquare = { .row = 0, .column = 7 };
+    constexpr Coordinates kWhiteRookQueensideSquare = { .row = 0, .column = 0 };
+    constexpr Coordinates kWhiteKnightKingsideSquare = { .row = 0, .column = 6 };
+    constexpr Coordinates kWhiteKnightQueensideSquare = { .row = 0, .column = 1 };
+    constexpr Coordinates kWhiteBishopKingsideSquare = { .row = 0, .column = 5 };
+    constexpr Coordinates kWhiteBishopQueensideSquare = { .row = 0, .column = 2 };
 
     constexpr Coordinates kBlackKingSquare = { .row = 7, .column = 4 };
     constexpr Coordinates kBlackQueenSquare = { .row = 7, .column = 3 };
-    constexpr Coordinates kBlackRookKingsideSquare = { .row = 7, .column = 0 };
-    constexpr Coordinates kBlackRookQueensideSquare = { .row = 7, .column = 7 };
-    constexpr Coordinates kBlackKnightKingsideSquare = { .row = 0, .column = 1 };
-    constexpr Coordinates kBlackKnightQueensideSquare = { .row = 0, .column = 6 };
-    constexpr Coordinates kBlackBishopKingsideSquare = { .row = 0, .column = 2 };
-    constexpr Coordinates kBlackBishopQueensideSquare = { .row = 0, .column = 3 };
+    constexpr Coordinates kBlackRookKingsideSquare = { .row = 7, .column = 7 };
+    constexpr Coordinates kBlackRookQueensideSquare = { .row = 7, .column = 0 };
+    constexpr Coordinates kBlackKnightKingsideSquare = { .row = 7, .column = 6 };
+    constexpr Coordinates kBlackKnightQueensideSquare = { .row = 7, .column = 1 };
+    constexpr Coordinates kBlackBishopKingsideSquare = { .row = 7, .column = 5 };
+    constexpr Coordinates kBlackBishopQueensideSquare = { .row = 7, .column = 2 };
 
 } // chess
 
