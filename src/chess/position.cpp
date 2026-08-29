@@ -143,6 +143,9 @@ namespace chess {
         }
         boardStream << "  -----------------\n";
         boardStream << "   a b c d e f g h \n";
+        if (en_passant_.has_value()) {
+            boardStream << std::format("(en passant allowed at square: {})\n", en_passant_.value());
+        }
         return boardStream.str();
     }
 
@@ -216,7 +219,7 @@ namespace chess {
             return;
         }
 
-        Piece pawn = GetPiece(coordinates);
+        Piece pawn = GetPiece(moved_pawn_coords);
         if (pawn.type != PieceType::Pawn || pawn.player != player_who_moved) {
             std::println(stderr, "[Warning] Position::EnsureLegalEnPassantSquare(): Invalid en_passant piece: {}.", pawn.ToChar());
             en_passant_.reset();
@@ -425,7 +428,7 @@ namespace chess {
         std::vector<Coordinates> take_directions = { {.row = dy, .column = -1}, {.row = dy, .column = 1}};
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
-            if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || en_passant_.has_value() && en_passant_.value() == to) {
+            if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || (en_passant_.has_value() && en_passant_.value() == to)) {
                 AddMoveToPlayer(from, to, player);
                 count++;
             }
