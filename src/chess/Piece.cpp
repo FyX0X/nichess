@@ -9,7 +9,16 @@
 #include "utility/string_utils.h"
 
 namespace chess {
-
+    std::string PlayerToString(const Player player) {
+        switch (player) {
+            case Player::White:
+                return "White";
+            case Player::Black:
+                return "Black";
+            default:
+                return "None";
+        }
+    }
 
     char Piece::ToChar() const {
         if (IsEmpty()) {

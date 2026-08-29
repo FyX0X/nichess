@@ -25,7 +25,10 @@ namespace chess {
         None = 0,
         White,
         Black
+
     };
+
+    std::string PlayerToString(Player player);
 
     struct Piece {
         PieceType type;
