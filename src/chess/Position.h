@@ -7,42 +7,15 @@
 
 #include <string>
 #include <array>
+#include <format>
 #include <vector>
 
 #include "Piece.h"
+#include "Coordinates.h"
+#include "Move.h"
+#include "CastlingRights.h"
 
 namespace chess {
-
-    struct CastlingRights {
-        bool white_kingside = true;
-        bool white_queenside = true;
-        bool black_kingside = true;
-        bool black_queenside = true;
-    };
-
-    struct Coordinates {
-        int row;
-        int column;
-
-        bool operator==(const Coordinates&) const = default;
-        Coordinates operator+(const Coordinates& rhs) const {
-            return { .row = row + rhs.row, .column = column + rhs.column};
-        }
-        Coordinates &operator+=(const Coordinates & rhs) {
-            row += rhs.row;
-            column += rhs.column;
-            return *this;
-        }
-
-        [[nodiscard]] bool IsValid() const { return 0 <= row && row < 8 && 0 <= column && column < 8; }
-    };
-
-    struct Move {
-        Coordinates from;
-        Coordinates to;
-
-        bool operator==(const Move&) const = default;
-    };
 
     class Position {
     public:
@@ -57,6 +30,8 @@ namespace chess {
 
         [[nodiscard]] std::string ToString() const;
 
+        [[nodiscard]] std::string GetReachableSquaresString(Player player) const;
+
         // getters
         [[nodiscard]] const std::array<std::array<Piece, 8>, 8>& GetBoard() const { return board_; }
 
@@ -64,37 +39,68 @@ namespace chess {
         [[nodiscard]] Piece GetPiece(int row, int column) const { return board_[row][column]; }
         [[nodiscard]] Piece GetPiece(Coordinates coords) const { return board_[coords.row][coords.column]; }
         [[nodiscard]] Player GetActivePlayer() const { return active_player_; }
+        [[nodiscard]] const std::vector<Coordinates>& GetPlayerOccupiedSquares(Player player) const {
+            return (player == Player::White) ? white_piece_coordinates_ : black_piece_coordinates_;
+        }
+        [[nodiscard]] const std::array<std::array<bool, 8>, 8>& GetPlayerReachableSquares(Player player) const {
+            return (player == Player::White) ? white_reachable_ : black_reachable_;
+        }
+
 
         [[nodiscard]] CastlingRights GetCastlingRights() const { return castling_rights_; }
 
         [[nodiscard]] int GetHalfMoveClock() const { return half_move_clock_; }
         [[nodiscard]] int GetMoveCount() const { return move_count_; }
 
+
+        [[nodiscard]] const std::vector<Move>& GetLegalMovesForPlayer(Player player) const;
+
+
         // setters
 
         // Moves
-        [[nodiscard]] std::vector<Move> GetLegalMoves() const;
+        [[nodiscard]] const std::vector<Move> &GetActivePlayerMoves() const;
 
     private:
 
         static int GetPawnStartingRank(Player player);
+        static int GetPieceStartingRank(Player player);
+        static Player GetOtherPlayer(Player player);
+        static bool CouldPlayerTakePiece(Player player, const Piece& piece);
 
         void RecomputeRemainingPieces();
 
-        [[nodiscard]] bool CouldPieceBeTaken(const Piece& piece) const;
-        [[nodiscard]] std::vector<Move> GetLegalMovesFromCoordinates(const Coordinates& from) const;
+        /** Limits the granted rights to what is possible with remaining pieces. */
+        void EnsurePossibleCastlingRights();
 
-        [[nodiscard]] std::vector<Move> GenerateTranslationMoves(const Coordinates& from,
-                                                                 const std::vector<Coordinates>& directions) const;
-        [[nodiscard]] std::vector<Move> GenerateDirectMoves(const Coordinates& from,
-                                                         const std::vector<Coordinates>& directions) const;
+        std::vector<Move>& GetLegalMovesForPlayer(Player player); // modifiable version
+        std::array<std::array<bool, 8>, 8>& GetPlayerReachableSquares(Player player) { // modifiable version
+            return (player == Player::White) ? white_reachable_ : black_reachable_;
+        }
 
-        [[nodiscard]] std::vector<Move> GeneratePawnMoves(const Coordinates& from) const;
-        [[nodiscard]] std::vector<Move> GenerateKnightMoves(const Coordinates& from) const;
-        [[nodiscard]] std::vector<Move> GenerateBishopMoves(const Coordinates& from) const;
-        [[nodiscard]] std::vector<Move> GenerateRookMoves(const Coordinates& from) const;
-        [[nodiscard]] std::vector<Move> GenerateQueenMoves(const Coordinates& from) const;
-        [[nodiscard]] std::vector<Move> GenerateKingMoves(const Coordinates& from) const;
+        void ComputeMovesForPlayer(Player player);
+
+        void AddMoveToPlayer(Move move, Player player);
+
+        void AddMoveToPlayer(Coordinates from, Coordinates to, Player player);
+
+        void GenerateLegalMovesFromCoordinates(const Coordinates& from, Player player);
+
+        void GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player);
+        void GenerateDirectMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player);
+
+        void GeneratePawnMoves(const Coordinates& from, Player player);
+        void GenerateKnightMoves(const Coordinates& from, Player player);
+        void GenerateBishopMoves(const Coordinates& from, Player player);
+        void GenerateRookMoves(const Coordinates& from, Player player);
+        void GenerateQueenMoves(const Coordinates& from, Player player);
+        void GenerateKingMoves(const Coordinates& from, Player player);
+        void GenerateCastleMoves(Player player);
+
+        [[nodiscard]] bool DoesPlayerTargetCoordinates(Player player, Coordinates coordinates) const;
+
+
+
 
 
         // each char represents a board cell.
@@ -108,7 +114,14 @@ namespace chess {
 
 
         // duplicate data for faster iteration through pieces
-        std::vector<Coordinates> piece_coordinates_ = {};
+        std::vector<Coordinates> white_piece_coordinates_ = {};
+        std::vector<Coordinates> black_piece_coordinates_ = {};
+
+        std::array<std::array<bool, 8>, 8> white_reachable_ = {};
+        std::array<std::array<bool, 8>, 8> black_reachable_ = {};
+
+        std::vector<Move> white_moves_ = {};
+        std::vector<Move> black_moves_ = {};
 
     };
 } // chess

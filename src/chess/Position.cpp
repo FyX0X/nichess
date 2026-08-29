@@ -4,6 +4,7 @@
 
 #include "Position.h"
 
+#include <cassert>
 #include <print>
 #include <sstream>
 #include <ranges>
@@ -66,15 +67,46 @@ namespace chess {
         }
     }
 
+    int Position::GetPieceStartingRank(Player player) {
+        switch (player) {
+            case Player::White:
+                return 0;
+            case Player::Black:
+                return 7;
+            default:
+                return -1;
+        }
+    }
+
+    Player Position::GetOtherPlayer(Player player) {
+        switch (player) {
+            case Player::White:
+                return Player::Black;
+            case Player::Black:
+                return Player::White;
+            default:
+                return Player::None;
+        }
+    }
+
+    /**
+     * @param piece The target piece
+     * @return if the target piece could be taken if another piece was targeting it (not current player and not king).
+     */
+    bool Position::CouldPlayerTakePiece(const Player player, const Piece& piece) {
+        return (piece.player == GetOtherPlayer(player) && piece.type != PieceType::King && piece.type != PieceType::None);
+    }
+
 #pragma endregion
 
     Position::Position() :
         board_()
-    {}
-
-    Position::Position(const std::array<std::array<Piece, 8>, 8> &board) :
-        board_(board) {
+    {
+        EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
+        ComputeMovesForPlayer(Player::White);
+        ComputeMovesForPlayer(Player::Black);
+
     }
 
     Position::Position(const std::array<std::array<Piece, 8>, 8> &board,
@@ -86,7 +118,12 @@ namespace chess {
         en_passant_(en_passant),
         half_move_clock_(half_move_clock),
         move_count_(move_count) {
+
+        EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
+        ComputeMovesForPlayer(Player::White);
+        ComputeMovesForPlayer(Player::Black);
+        ComputeMovesForPlayer(Player::White); // recompute with updated info // todo change this
     }
 
     std::string Position::ToString() const {
@@ -108,138 +145,247 @@ namespace chess {
     }
 
 
+    std::string Position::GetReachableSquaresString(Player player) const {
+        std::stringstream boardStream;
+
+        const auto& reachable = GetPlayerReachableSquares(player);
+
+        // reverse order since row 0 is at bottom
+        boardStream << '\n' << (player == Player::White ? "White" : "Black") << " Reach.\n";
+        boardStream << "  _________________\n";
+        for (int row_index = 7; row_index >= 0; --row_index) {
+            const auto& row = reachable[row_index];
+            boardStream << row_index + 1 << "| ";
+            for (const bool is_square_reachable : row) {
+                boardStream << (is_square_reachable ?  "█" : " " ) << ' ';
+            }
+            boardStream << "|\n";
+        }
+        boardStream << "  -----------------\n";
+        boardStream << "   a b c d e f g h \n";
+        return boardStream.str();
+    }
+
+
     void Position::RecomputeRemainingPieces() {
-        piece_coordinates_.clear();
+        white_piece_coordinates_.clear();
+        black_piece_coordinates_.clear();
         for (uint8_t row = 0; row < 8; ++row) {
             for (uint8_t col = 0; col < 8; ++col) {
-                Piece piece = board_[row][col];
+                Coordinates coordinates = { .row = row, .column = col };
+                Piece piece = GetPiece(coordinates);
                 if (piece.IsEmpty()) {
                     continue;
                 }
-                piece_coordinates_.push_back({
-                    .row = row,
-                    .column = col
-                });
+                switch (piece.player) {
+                    case Player::White:
+                        white_piece_coordinates_.push_back(coordinates);
+                        break;
+                    case Player::Black:
+                        black_piece_coordinates_.push_back(coordinates);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
-        std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({} still on board)", piece_coordinates_.size());
+        std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({}/{}, w/b still on board)",
+            white_piece_coordinates_.size(), black_piece_coordinates_.size());
     }
+
+    void Position::EnsurePossibleCastlingRights() {
+        if (GetPiece(kWhiteKingSquare) != kWhiteKing) {
+            std::println("White castling removed");
+            castling_rights_.white_kingside = false;
+            castling_rights_.white_queenside = false;
+        }
+        if (GetPiece(kWhiteRookKingsideSquare) != kWhiteRook) {
+            std::println("White king castling removed");
+            castling_rights_.white_kingside = false;
+        }
+        if (GetPiece(kWhiteRookQueensideSquare) != kWhiteRook) {
+
+            std::println("White queen castling removed");
+            castling_rights_.white_queenside = false;
+        }
+
+        if (GetPiece(kBlackKingSquare) != kBlackKing) {
+            std::println("Black castling removed");
+            castling_rights_.black_kingside = false;
+            castling_rights_.black_queenside = false;
+        }
+        if (GetPiece(kBlackRookKingsideSquare) != kBlackRook) {
+            std::println("Black king castling removed");
+            castling_rights_.black_kingside = false;
+        }
+        if (GetPiece(kBlackRookQueensideSquare) != kBlackRook) {
+            std::println("Black queen castling removed");
+            castling_rights_.black_queenside = false;
+        }
+    }
+
+
+
+    std::vector<Move>& Position::GetLegalMovesForPlayer(const Player player) {
+        switch (player) {
+            case Player::White:
+                return white_moves_;
+            case Player::Black:
+                return black_moves_;
+            default:
+                break;
+        }
+
+        std::println(stderr, "[ERROR] Position::GetLegalMovesForPlayer(): Invalid player");
+        std::unreachable();
+    }
+
+    const std::vector<Move>& Position::GetLegalMovesForPlayer(const Player player) const {
+        switch (player) {
+            case Player::White:
+                return white_moves_;
+            case Player::Black:
+                return black_moves_;
+            default:
+                break;
+        }
+
+        std::println(stderr, "[ERROR] Position::GetLegalMovesForPlayer(): Invalid player");
+        std::unreachable();
+    }
+
+
 
 
 #pragma region Moves
 
-    /**
-     * @param piece The target piece
-     * @return if the target piece could be taken if another piece was targeting it (not current player and not king).
-     */
-    bool Position::CouldPieceBeTaken(const Piece& piece) const {
-        return (piece.player != active_player_ && piece.type != PieceType::King && piece.type != PieceType::None);
+    const std::vector<Move>& Position::GetActivePlayerMoves() const {
+        assert(active_player_ != Player::None && "[ERROR] Position::GetLegalMoves() Active player was None");
+        return GetLegalMovesForPlayer(active_player_);
     }
 
-    std::vector<Move> Position::GetLegalMoves() const {
-        std::vector<Move> moves;
-        for (const Coordinates& coord : piece_coordinates_) {
-            if (GetPiece(coord).player != active_player_) {
-                continue;
-            }
-            moves.append_range(GetLegalMovesFromCoordinates(coord));
-            std::println("generated {} moves.", GetLegalMovesFromCoordinates(coord).size()); // TODO remove
+
+
+    void Position::ComputeMovesForPlayer(Player player) {
+
+        GetLegalMovesForPlayer(player).clear();
+        GetPlayerReachableSquares(player).fill(std::array<bool, 8>{false});
+
+        for (const Coordinates& coord : GetPlayerOccupiedSquares(player)) {
+            assert(GetPiece(coord).player == player);
+            GenerateLegalMovesFromCoordinates(coord, player);
         }
-        return moves;
+        GenerateCastleMoves(player);
+
+
+    }
+
+    // TODO consider changing args to P, std::vector<Move>& player_moves, std::array<std::array<bool, 8>, 8>& player_reachable instead of just Player playre
+    void Position::AddMoveToPlayer(const Move move, const Player player) {
+        GetLegalMovesForPlayer(player).push_back(move);
+        GetPlayerReachableSquares(player)[move.to.row][move.to.column] = true;
+    }
+
+    void Position::AddMoveToPlayer(const Coordinates from, const Coordinates to, const Player player) {
+        GetLegalMovesForPlayer(player).push_back({ .from = from, .to = to });
+        GetPlayerReachableSquares(player)[to.row][to.column] = true;
     }
 
 
-    std::vector<Move> Position::GetLegalMovesFromCoordinates(const Coordinates& from) const {
+    void Position::GenerateLegalMovesFromCoordinates(const Coordinates& from, Player player) {
+
         Piece piece = GetPiece(from);
-        if (piece.IsEmpty() || piece.player != active_player_) {
-            return {};
-        }
+        assert(!piece.IsEmpty() && piece.player == player && "Invalid player or piece.");
 
-        std::println("generating moves from coord ({},{})", from.row, from.column);
         switch (piece.type) {
             case PieceType::Pawn:
-                std::println("PAWN MOVES:");
-                return GeneratePawnMoves(from);
+                // std::println("PAWN MOVES:");
+                return GeneratePawnMoves(from, player);
             case PieceType::Knight:
-                std::println("KNIGHT MOVES:");
-                return GenerateKnightMoves(from);
+                // std::println("KNIGHT MOVES:");
+                return GenerateKnightMoves(from, player);
             case PieceType::Bishop:
-                std::println("BISHOP MOVES:");
-                return GenerateBishopMoves(from);
+                // std::println("BISHOP MOVES:");
+                return GenerateBishopMoves(from, player);
             case PieceType::Rook:
-                std::println("ROOK MOVES:");
-                return GenerateRookMoves(from);
+                // std::println("ROOK MOVES:");
+                return GenerateRookMoves(from, player);
             case PieceType::Queen:
-                std::println("QUEEN MOVES:");
-                return GenerateQueenMoves(from);
+                // std::println("QUEEN MOVES:");
+                return GenerateQueenMoves(from, player);
             case PieceType::King:
-                std::println("KING MOVES:");
-                return GenerateKingMoves(from);
+                // std::println("KING MOVES:");
+                return GenerateKingMoves(from, player);
             default:
-                return {};
+                std::println(stderr, "[ERROR] Position::GenerateLegalMovesForPlayer(): Unrecognized piece type, {}", std::to_underlying(piece.type));
+                return;
         }
     }
 
-    std::vector<Move> Position::GenerateDirectMoves(const Coordinates &from, const std::vector<Coordinates> &directions) const {
-        std::vector<Move> moves;
+    void Position::GenerateDirectMoves(const Coordinates &from, const std::vector<Coordinates> &directions, Player player) {
+        Piece moving_piece = GetPiece(from);
+        assert(GetPiece(from).player == player);
+        int count = 0;
         for (const Coordinates& dir : directions) {
             Coordinates to = from + dir;
             if (!to.IsValid()) {
                 continue;
             }
+
             Piece piece = GetPiece(to);
-            if (piece.IsEmpty() || CouldPieceBeTaken(piece)) {
-                moves.push_back({.from = from, .to = to});
+            if (piece.IsEmpty() || CouldPlayerTakePiece(player, piece)) {
+                AddMoveToPlayer(from, to, player);
+                count++;
             }
         }
-        return moves;
+        // std::println("Added '{}' moves from {}", count, from);
     }
 
-    std::vector<Move> Position::GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions) const {
-        std::vector<Move> moves;
-        // go in all directions
+    void Position::GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player) {
 
+        assert(GetPiece(from).player == player);
+
+        int count = 0;
+        // go in all directions
         for (const Coordinates& dir : directions) {
-            // std::println("from: ({},{}), current dir: ({},{})", from.row, from.column, dir.row, dir.column);
             for (Coordinates to = from + dir; to.IsValid(); to += dir ) {
-                // std::println("from: ({},{}), to: ({},{})", from.row, from.column, to.row, to.column);
                 Piece piece = GetPiece(to);
                 if (piece.IsEmpty()) {
-                    moves.push_back({.from = from, .to = to});
-                    // std::println("({},{}) is empty, adding move to list", to.row, to.column);
+                    AddMoveToPlayer(from, to, player);
+                    count++;
                     continue;
                 }
-                if (CouldPieceBeTaken(piece)) {
-                    moves.push_back( {.from = from, .to = to});
-                    // std::println("({},{}) is enemy, adding move to list", to.row, to.column);
+                if (CouldPlayerTakePiece(player, piece)) {
+                    AddMoveToPlayer( from, to, player);
+                    count++;
                 }
                 break;
             }
         }
-        return moves;
+
+        // std::println("Added '{}' moves from {}", count, from);
     }
 
-    std::vector<Move> Position::GeneratePawnMoves(const Coordinates& from) const {
+    void Position::GeneratePawnMoves(const Coordinates& from, Player player) {
         // TODO
-        std::println("pawn moves from ({},{}):", from.row, from.column);
 
-        std::vector<Move> moves;
-
+        assert(GetPiece(from).player == player);
+        int count = 0;
         // moving straight
-        int dy = (active_player_ == Player::White) ? 1 : -1;
+        int dy = (player == Player::White) ? 1 : -1;
         Coordinates direction = {.row = dy, .column = 0};
 
         Coordinates to = from + direction;
-        std::println("testing coord ({},{})", to.row, to.column);
         if (to.IsValid() && GetPiece(to).IsEmpty()) {
-            moves.push_back({.from = from, .to = to});
+            AddMoveToPlayer(from, to, player);
+            count++;
 
             // second step if starting row and unobstructed.
-            if (from.row == GetPawnStartingRank(active_player_)) {
+            if (from.row == GetPawnStartingRank(player)) {
                 to += direction;
-                std::println("testing coord ({},{})", to.row, to.column);
                 if (to.IsValid() && GetPiece(to).IsEmpty()) {
-                    moves.push_back({.from = from, .to = to});
+                    AddMoveToPlayer(from, to, player);
+                    count++;
                 }
             }
         }
@@ -248,35 +394,93 @@ namespace chess {
         std::vector<Coordinates> take_directions = { {.row = dy, .column = -1}, {.row = dy, .column = 1}};
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
-            if (to.IsValid() && CouldPieceBeTaken(GetPiece(to))) {
-                moves.push_back({.from = from, .to = to});
+            if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to))) {
+                AddMoveToPlayer(from, to, player);
+                count++;
             }
         }
 
-        std::println("pawn moves from ({},{}): count: {}", from.row, from.column, moves.size());
-        return moves;
+        // std::println("Added '{}' moves from {}", count, from);
     }
 
-    std::vector<Move> Position::GenerateKnightMoves(const Coordinates& from) const {
-        return GenerateDirectMoves(from, kKnightDirections);
+    void Position::GenerateKnightMoves(const Coordinates& from, Player player) {
+        GenerateDirectMoves(from, kKnightDirections, player);
     }
 
-    std::vector<Move> Position::GenerateBishopMoves(const Coordinates& from) const {
-        return GenerateTranslationMoves(from, kDiagonalDirections);
+    void Position::GenerateBishopMoves(const Coordinates& from, Player player) {
+        GenerateTranslationMoves(from, kDiagonalDirections, player);
     }
 
-    std::vector<Move> Position::GenerateRookMoves(const Coordinates& from) const {
-        return GenerateTranslationMoves(from, kOrthogonalDirections);
+    void Position::GenerateRookMoves(const Coordinates& from, Player player) {
+        GenerateTranslationMoves(from, kOrthogonalDirections, player);
     }
 
-    std::vector<Move> Position::GenerateQueenMoves(const Coordinates& from) const {
-        return GenerateTranslationMoves(from, kAllDirections);
+    void Position::GenerateQueenMoves(const Coordinates& from, Player player) {
+        GenerateTranslationMoves(from, kAllDirections, player);
     }
 
-    std::vector<Move> Position::GenerateKingMoves(const Coordinates& from) const {
-        return GenerateDirectMoves(from, kAllDirections);
+    void Position::GenerateKingMoves(const Coordinates& from, Player player) {
+        GenerateDirectMoves(from, kAllDirections, player);
 
         // todo add castle
+    }
+
+    void Position::GenerateCastleMoves(const Player player) {
+        // TODO handle castle moves correctly when implementing move function.
+
+        Coordinates from = { .row = GetPieceStartingRank(player), .column = 4 };
+
+        Piece king = GetPiece(from);
+
+        // std::println("generate castle moves, current opponent reach = {}",
+        //     GetReachableSquaresString(GetOtherPlayer(player)));
+
+        if (player == Player::White && castling_rights_.white_kingside
+            || player == Player::Black && castling_rights_.black_kingside) {
+
+            assert(king.type == PieceType::King);
+            assert(king.player == player);
+
+            bool castle_available = true;
+            for (int col = 5; col < 7; ++col) {
+                Coordinates coords = { .row = from.row, .column = col };
+                std::println("testing {}", coords);
+                if (!GetPiece(coords).IsEmpty() || DoesPlayerTargetCoordinates(GetOtherPlayer(player), coords)) {
+                    castle_available = false;
+                    break;
+                }
+            }
+            if (castle_available) {
+                AddMoveToPlayer(from, {.row = from.row, .column = from.column + 2}, player);
+                std::println("Add kingside castle for player: {}", PlayerToString(player));
+            }
+        }
+        // TODO try to remove duplicate code for kingside / queenside
+        if (player == Player::White && castling_rights_.white_queenside
+            || player == Player::Black && castling_rights_.black_queenside) {
+
+            assert(king.type == PieceType::King);
+            assert(king.player == player);
+
+            bool castle_available = true;
+            for (int col = 3; col > 0; --col) {
+                Coordinates coords = { .row = from.row, .column = col };
+                if (!GetPiece(coords).IsEmpty() || DoesPlayerTargetCoordinates(GetOtherPlayer(player), coords)) {
+                    castle_available = false;
+                    break;
+                }
+            }
+            if (castle_available) {
+                AddMoveToPlayer(from, {.row = from.row, .column = from.column - 2}, player);
+                std::println("Add queenside castle for player: {}", PlayerToString(player));
+            }
+        }
+    }
+
+    bool Position::DoesPlayerTargetCoordinates(const Player player, const Coordinates coordinates) const {
+        const bool is_targeted = GetPlayerReachableSquares(player)[coordinates.row][coordinates.column];
+        // std::println("does {} target {} = {}", PlayerToString(player), coordinates, is_targeted);
+        return is_targeted;
     }
 
 
