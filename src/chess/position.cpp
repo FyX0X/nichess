@@ -319,12 +319,8 @@ namespace chess {
     }
 
     // TODO consider changing args to P, std::vector<Move>& player_moves, std::array<std::array<bool, 8>, 8>& player_reachable instead of just Player playre
-    void Position::AddMoveToPlayer(const Move move, const Player player) {
+    void Position::AddMoveToPlayer(const Move& move, const Player player) {
         GetLegalMovesForPlayer(player).push_back(move);
-    }
-
-    void Position::AddMoveToPlayer(const Coordinates from, const Coordinates to, const Player player) {
-        GetLegalMovesForPlayer(player).push_back({ .from = from, .to = to });
     }
 
 
@@ -370,7 +366,9 @@ namespace chess {
             AddTargetedSquareToPlayer(to, player);
             Piece piece = GetPiece(to);
             if (piece.IsEmpty() || CouldPlayerTakePiece(player, piece)) {
-                AddMoveToPlayer(from, to, player);
+                Move move(from, to);
+                move.capture = !piece.IsEmpty();
+                AddMoveToPlayer(move, player);
                 count++;
             }
         }
@@ -388,12 +386,15 @@ namespace chess {
                 AddTargetedSquareToPlayer(to, player);
                 Piece piece = GetPiece(to);
                 if (piece.IsEmpty()) {
-                    AddMoveToPlayer(from, to, player);
+                    Move move(from, to);
+                    AddMoveToPlayer(move, player);
                     count++;
                     continue;
                 }
                 if (CouldPlayerTakePiece(player, piece)) {
-                    AddMoveToPlayer( from, to, player);
+                    Move move(from, to);
+                    move.capture = true;
+                    AddMoveToPlayer(move, player);
                     count++;
                 }
                 break;
@@ -414,14 +415,19 @@ namespace chess {
 
         Coordinates to = from + direction;
         if (to.IsValid() && GetPiece(to).IsEmpty()) {
-            AddMoveToPlayer(from, to, player);
+            Move move(from, to);
+            AddMoveToPlayer(move, player);
             count++;
+
+            // todo check promotion and generate each move
 
             // second step if starting row and unobstructed.
             if (from.row == GetPawnStartingRank(player)) {
                 to += direction;
                 if (to.IsValid() && GetPiece(to).IsEmpty()) {
-                    AddMoveToPlayer(from, to, player);
+                    move = Move(from, to);
+                    move.double_pawn = true;
+                    AddMoveToPlayer(move, player);
                     count++;
                 }
             }
@@ -431,10 +437,16 @@ namespace chess {
         std::vector<Coordinates> take_directions = { {.row = dy, .column = -1}, {.row = dy, .column = 1}};
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
-            if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || (en_passant_.has_value() && en_passant_.value() == to)) {
-                AddMoveToPlayer(from, to, player);
+            bool is_en_passant = en_passant_.has_value() && en_passant_.value() == to;
+            if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || is_en_passant) {
+                Move move(from, to);
+                move.capture = true;
+                move.en_passant = is_en_passant;
+                AddMoveToPlayer(move, player);
                 AddTargetedSquareToPlayer(to, player);
                 count++;
+
+                // todo check promotion
             }
         }
 
@@ -489,7 +501,9 @@ namespace chess {
                 }
             }
             if (castle_available) {
-                AddMoveToPlayer(from, {.row = from.row, .column = from.column + 2}, player);
+                Move move(from, {.row = from.row, .column = from.column + 2});
+                move.castle_kingside = true;
+                AddMoveToPlayer(move, player);
                 std::println("Add kingside castle for player: {}", PlayerToString(player));
             }
         }
@@ -509,7 +523,9 @@ namespace chess {
                 }
             }
             if (castle_available) {
-                AddMoveToPlayer(from, {.row = from.row, .column = from.column - 2}, player);
+                Move move(from, {.row = from.row, .column = from.column - 2});
+                move.castle_queenside = true;
+                AddMoveToPlayer(move, player);
                 std::println("Add queenside castle for player: {}", PlayerToString(player));
             }
         }

@@ -86,9 +86,7 @@ namespace chess {
 
         void AddTargetedSquareToPlayer(Coordinates to, Player player);
 
-        void AddMoveToPlayer(Move move, Player player);
-
-        void AddMoveToPlayer(Coordinates from, Coordinates to, Player player);
+        void AddMoveToPlayer(const Move &move, Player player);
 
         void GenerateLegalMovesFromCoordinates(const Coordinates& from, Player player);
 
