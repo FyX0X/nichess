@@ -7,6 +7,7 @@
 
 #include <format>
 #include <string>
+#include "utility/string_utils.h"
 
 namespace chess {
 
@@ -27,6 +28,25 @@ namespace chess {
         [[nodiscard]] bool IsValid() const { return 0 <= row && row < 8 && 0 <= column && column < 8; }
 
         [[nodiscard]] std::string ToString() const; // declared later since formatter does not exist yet.
+
+        static std::optional<Coordinates> FromAlgebraicSquareNotation(std::string_view algebraic_square_notation) {
+            if (algebraic_square_notation.size() != 2) {
+                return std::nullopt;
+            }
+
+            char column_char = utility::strings::ToLowerCase(algebraic_square_notation[0]);
+            char row_char = algebraic_square_notation[1];
+
+            int row = row_char - '1';
+            int column = column_char - 'a';
+
+            Coordinates coordinates{ .row = row, .column = column };
+            if (coordinates.IsValid()) {
+                return coordinates;
+            }
+
+            return std::nullopt;
+        }
     };
 
 

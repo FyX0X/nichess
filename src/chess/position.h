@@ -24,7 +24,7 @@ namespace chess {
         Position(const std::array<std::array<Piece, 8>, 8>& board,
                  Player active_player,
                  const CastlingRights& castling_rights,
-                 std::string_view en_passant,
+                 std::optional<Coordinates> en_passant,
                  int half_move_clock,
                  int move_count);
 
@@ -55,6 +55,8 @@ namespace chess {
 
         [[nodiscard]] const std::vector<Move>& GetLegalMovesForPlayer(Player player) const;
 
+        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return en_passant_; }
+
 
         // setters
 
@@ -69,6 +71,8 @@ namespace chess {
         static bool CouldPlayerTakePiece(Player player, const Piece& piece);
 
         void RecomputeRemainingPieces();
+
+        void EnsureLegalEnPassantSquare();
 
         /** Limits the granted rights to what is possible with remaining pieces. */
         void EnsurePossibleCastlingRights();
@@ -108,7 +112,7 @@ namespace chess {
         std::array<std::array<Piece, 8>, 8> board_;
         Player active_player_ = Player::White;
         CastlingRights castling_rights_{};
-        std::string en_passant_; // TODO implement this or a previous move field.
+        std::optional<Coordinates> en_passant_ = std::nullopt;
         int half_move_clock_ = 0;
         int move_count_ = 1;
 

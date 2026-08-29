@@ -102,6 +102,7 @@ namespace chess {
     Position::Position() :
         board_()
     {
+        EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
         ComputeMovesForPlayer(Player::White);
@@ -111,7 +112,7 @@ namespace chess {
 
     Position::Position(const std::array<std::array<Piece, 8>, 8> &board,
                        Player active_player, const CastlingRights& castling_rights,
-                       std::string_view en_passant, int half_move_clock, int move_count) :
+                       std::optional<Coordinates> en_passant, int half_move_clock, int move_count) :
         board_(board),
         active_player_(active_player),
         castling_rights_(castling_rights),
@@ -119,6 +120,7 @@ namespace chess {
         half_move_clock_(half_move_clock),
         move_count_(move_count) {
 
+        EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
         ComputeMovesForPlayer(Player::White);
@@ -191,6 +193,35 @@ namespace chess {
         }
         std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({}/{}, w/b still on board)",
             white_piece_coordinates_.size(), black_piece_coordinates_.size());
+    }
+
+    void Position::EnsureLegalEnPassantSquare() {
+        if (!en_passant_.has_value()) {
+            return;
+        }
+
+        Coordinates coordinates = en_passant_.value();
+        Player player_who_moved;
+        Coordinates moved_pawn_coords{-1, -1};
+        if (coordinates.row == 2) {
+            // white pawn
+            player_who_moved = Player::White;
+            moved_pawn_coords = { .row = 3, .column = coordinates.column };
+        } else if (coordinates.row == 5) {
+            player_who_moved = Player::Black;
+            moved_pawn_coords = { .row = 4, .column = coordinates.column };
+        } else {
+            std::println(stderr, "[Warning] Position::EnsureLegalEnPassantSquare(): Invalid en_passant position: {}.", coordinates);
+            en_passant_.reset();
+            return;
+        }
+
+        Piece pawn = GetPiece(coordinates);
+        if (pawn.type != PieceType::Pawn || pawn.player != player_who_moved) {
+            std::println(stderr, "[Warning] Position::EnsureLegalEnPassantSquare(): Invalid en_passant piece: {}.", pawn.ToChar());
+            en_passant_.reset();
+            return;
+        }
     }
 
     void Position::EnsurePossibleCastlingRights() {

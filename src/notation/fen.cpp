@@ -24,7 +24,7 @@ namespace notation::fen {
     static std::array<std::array<chess::Piece, 8>, 8> ParsePlacementSection(std::string_view placement_section);
     static chess::Player ParseActivePlayerSection(std::string_view active_player_section);
     static chess::CastlingRights ParseCastlingSection(std::string_view castling_section);
-    static std::string ParseEnPassantSection(std::string_view en_passant_section);
+    static std::optional<chess::Coordinates> ParseEnPassantSection(std::string_view en_passant_section);
 
 #pragma endregion
 
@@ -125,7 +125,12 @@ namespace notation::fen {
     }
 
     static std::string GetEnPassantSection(const chess::Position& position) {
-        return "-"; // TODO implement this.
+        std::optional<chess::Coordinates> en_passant = position.GetEnPassant();
+        if (en_passant.has_value()) {
+            return en_passant.value().ToString();
+        }
+
+        return "-";
     }
 
 
@@ -202,8 +207,11 @@ namespace notation::fen {
     }
 
 
-    static std::string ParseEnPassantSection(std::string_view en_passant_section) {
-        return static_cast<std::string>(en_passant_section);
+    static std::optional<chess::Coordinates> ParseEnPassantSection(std::string_view en_passant_section) {
+        if (en_passant_section == "-") {
+            return std::nullopt;
+        }
+        return chess::Coordinates::FromAlgebraicSquareNotation(en_passant_section);
     }
 
 #pragma endregion

@@ -39,6 +39,22 @@ int main() {
     GameInfoFEN("r3k3/8/8/8/6B1/2n5/8/R3K2R w KQq - 0 1");
 
 
+    std::vector<std::string> coords = { "a1", "b2", "e8", "h1" };
+    for (const auto& coord : coords) {
+        chess::Coordinates decoded_coords = chess::Coordinates::FromAlgebraicSquareNotation(coord).value();
+        if (decoded_coords.ToString() != coord) {
+            std::println("Coordinates are incorrect: {} -> {}", coord, decoded_coords);
+        }
+    }
+
+    std::vector<std::string> invalid_coords = { "a0", "b22", "ee", "h", "f9", " f"};
+    for (const auto& coord : invalid_coords) {
+        std::optional<chess::Coordinates> decoded_coords = chess::Coordinates::FromAlgebraicSquareNotation(coord);
+        if (decoded_coords.has_value()) {
+            std::println("Coordinates should not be correct: {} -> {}", coord, decoded_coords.value());
+        }
+    }
+
     return 0;
 
 
