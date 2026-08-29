@@ -7,9 +7,9 @@
 
 #include <optional>
 #include <string>
-#include "chess/Position.h"
+#include "chess/position.h"
 
-namespace notation::FEN {
+namespace notation::fen {
 
     constexpr std::string_view kDefaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 

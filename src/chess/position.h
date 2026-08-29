@@ -10,10 +10,10 @@
 #include <format>
 #include <vector>
 
-#include "Piece.h"
-#include "Coordinates.h"
-#include "Move.h"
-#include "CastlingRights.h"
+#include "piece.h"
+#include "coordinates.h"
+#include "move.h"
+#include "castling_rights.h"
 
 namespace chess {
 

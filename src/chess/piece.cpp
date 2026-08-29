@@ -2,7 +2,7 @@
 // Created by martin on 27/08/2026.
 //
 
-#include "Piece.h"
+#include "piece.h"
 
 #include <utility>
 

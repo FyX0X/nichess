@@ -6,7 +6,7 @@
 #define NICHESS_MOVE_H
 
 
-#include "Coordinates.h"
+#include "coordinates.h"
 
 namespace chess {
 

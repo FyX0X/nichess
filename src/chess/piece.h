@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "Coordinates.h"
+#include "coordinates.h"
 
 namespace chess {
 

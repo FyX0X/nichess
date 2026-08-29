@@ -2,13 +2,15 @@
 // Created by martin on 27/08/2026.
 //
 
-#include "FEN.h"
+#include "fen.h"
 #include <sstream>
 #include <format>
 #include <vector>
 #include <print>
 #include "utility/string_utils.h"
-namespace notation::FEN {
+
+
+namespace notation::fen {
 
 #pragma region Forward Declarations
 
