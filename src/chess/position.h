@@ -30,7 +30,7 @@ namespace chess {
 
         [[nodiscard]] std::string ToString() const;
 
-        [[nodiscard]] std::string GetReachableSquaresString(Player player) const;
+        [[nodiscard]] std::string GetTargetedSquaresString(Player player) const;
 
         // getters
         [[nodiscard]] const std::array<std::array<Piece, 8>, 8>& GetBoard() const { return board_; }
@@ -42,8 +42,8 @@ namespace chess {
         [[nodiscard]] const std::vector<Coordinates>& GetPlayerOccupiedSquares(Player player) const {
             return (player == Player::White) ? white_piece_coordinates_ : black_piece_coordinates_;
         }
-        [[nodiscard]] const std::array<std::array<bool, 8>, 8>& GetPlayerReachableSquares(Player player) const {
-            return (player == Player::White) ? white_reachable_ : black_reachable_;
+        [[nodiscard]] const std::array<std::array<bool, 8>, 8>& GetPlayerTargetedSquares(Player player) const {
+            return (player == Player::White) ? white_targets_ : black_targets_;
         }
 
 
@@ -78,11 +78,13 @@ namespace chess {
         void EnsurePossibleCastlingRights();
 
         std::vector<Move>& GetLegalMovesForPlayer(Player player); // modifiable version
-        std::array<std::array<bool, 8>, 8>& GetPlayerReachableSquares(const Player player) { // modifiable version
-            return (player == Player::White) ? white_reachable_ : black_reachable_;
+        std::array<std::array<bool, 8>, 8>& GetPlayerTargetedSquares(const Player player) { // modifiable version
+            return (player == Player::White) ? white_targets_ : black_targets_;
         }
 
         void ComputeMovesForPlayer(Player player);
+
+        void AddTargetedSquareToPlayer(Coordinates to, Player player);
 
         void AddMoveToPlayer(Move move, Player player);
 
@@ -121,8 +123,9 @@ namespace chess {
         std::vector<Coordinates> white_piece_coordinates_ = {};
         std::vector<Coordinates> black_piece_coordinates_ = {};
 
-        std::array<std::array<bool, 8>, 8> white_reachable_ = {};
-        std::array<std::array<bool, 8>, 8> black_reachable_ = {};
+        // contains the squares that the players can attack / target
+        std::array<std::array<bool, 8>, 8> white_targets_ = {};
+        std::array<std::array<bool, 8>, 8> black_targets_ = {};
 
         std::vector<Move> white_moves_ = {};
         std::vector<Move> black_moves_ = {};

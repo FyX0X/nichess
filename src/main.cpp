@@ -10,8 +10,8 @@ static void GameInfo(const chess::Position& position) {
     const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
     std::println("move count= {}", moves.size());
 
-    std::println("{}", position.GetReachableSquaresString(chess::Player::White));
-    std::println("{}", position.GetReachableSquaresString(chess::Player::Black));
+    std::println("{}", position.GetTargetedSquaresString(chess::Player::White));
+    std::println("{}", position.GetTargetedSquaresString(chess::Player::Black));
 }
 
 static void GameInfoFEN(std::string_view fen) {

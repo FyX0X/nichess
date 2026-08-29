@@ -150,16 +150,16 @@ namespace chess {
     }
 
 
-    std::string Position::GetReachableSquaresString(Player player) const {
+    std::string Position::GetTargetedSquaresString(Player player) const {
         std::stringstream boardStream;
 
-        const auto& reachable = GetPlayerReachableSquares(player);
+        const auto& targets = GetPlayerTargetedSquares(player);
 
         // reverse order since row 0 is at bottom
-        boardStream << '\n' << (player == Player::White ? "White" : "Black") << " Reach.\n";
+        boardStream << '\n' << (player == Player::White ? "White" : "Black") << " Targets.\n";
         boardStream << "  _________________\n";
         for (int row_index = 7; row_index >= 0; --row_index) {
-            const auto& row = reachable[row_index];
+            const auto& row = targets[row_index];
             boardStream << row_index + 1 << "| ";
             for (const bool is_square_reachable : row) {
                 boardStream << (is_square_reachable ?  "█" : " " ) << ' ';
@@ -303,7 +303,7 @@ namespace chess {
     void Position::ComputeMovesForPlayer(Player player) {
 
         GetLegalMovesForPlayer(player).clear();
-        GetPlayerReachableSquares(player).fill(std::array<bool, 8>{false});
+        GetPlayerTargetedSquares(player).fill(std::array<bool, 8>{false});
 
         for (const Coordinates& coord : GetPlayerOccupiedSquares(player)) {
             assert(GetPiece(coord).player == player);
@@ -314,15 +314,17 @@ namespace chess {
 
     }
 
+    void Position::AddTargetedSquareToPlayer(const Coordinates to, Player player) {
+        GetPlayerTargetedSquares(player)[to.row][to.column] = true;
+    }
+
     // TODO consider changing args to P, std::vector<Move>& player_moves, std::array<std::array<bool, 8>, 8>& player_reachable instead of just Player playre
     void Position::AddMoveToPlayer(const Move move, const Player player) {
         GetLegalMovesForPlayer(player).push_back(move);
-        GetPlayerReachableSquares(player)[move.to.row][move.to.column] = true;
     }
 
     void Position::AddMoveToPlayer(const Coordinates from, const Coordinates to, const Player player) {
         GetLegalMovesForPlayer(player).push_back({ .from = from, .to = to });
-        GetPlayerReachableSquares(player)[to.row][to.column] = true;
     }
 
 
@@ -365,7 +367,7 @@ namespace chess {
             if (!to.IsValid()) {
                 continue;
             }
-
+            AddTargetedSquareToPlayer(to, player);
             Piece piece = GetPiece(to);
             if (piece.IsEmpty() || CouldPlayerTakePiece(player, piece)) {
                 AddMoveToPlayer(from, to, player);
@@ -383,6 +385,7 @@ namespace chess {
         // go in all directions
         for (const Coordinates& dir : directions) {
             for (Coordinates to = from + dir; to.IsValid(); to += dir ) {
+                AddTargetedSquareToPlayer(to, player);
                 Piece piece = GetPiece(to);
                 if (piece.IsEmpty()) {
                     AddMoveToPlayer(from, to, player);
@@ -430,6 +433,7 @@ namespace chess {
             to = from + take_direction;
             if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || (en_passant_.has_value() && en_passant_.value() == to)) {
                 AddMoveToPlayer(from, to, player);
+                AddTargetedSquareToPlayer(to, player);
                 count++;
             }
         }
@@ -512,7 +516,7 @@ namespace chess {
     }
 
     bool Position::DoesPlayerTargetCoordinates(const Player player, const Coordinates coordinates) const {
-        const bool is_targeted = GetPlayerReachableSquares(player)[coordinates.row][coordinates.column];
+        const bool is_targeted = GetPlayerTargetedSquares(player)[coordinates.row][coordinates.column];
         // std::println("does {} target {} = {}", PlayerToString(player), coordinates, is_targeted);
         return is_targeted;
     }
