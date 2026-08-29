@@ -7,6 +7,8 @@
 
 #include <format>
 #include <string>
+#include <string_view>
+#include <optional>
 #include "utility/string_utils.h"
 
 namespace chess {
@@ -29,24 +31,7 @@ namespace chess {
 
         [[nodiscard]] std::string ToString() const; // declared later since formatter does not exist yet.
 
-        static std::optional<Coordinates> FromAlgebraicSquareNotation(std::string_view algebraic_square_notation) {
-            if (algebraic_square_notation.size() != 2) {
-                return std::nullopt;
-            }
-
-            char column_char = utility::strings::ToLowerCase(algebraic_square_notation[0]);
-            char row_char = algebraic_square_notation[1];
-
-            int row = row_char - '1';
-            int column = column_char - 'a';
-
-            Coordinates coordinates{ .row = row, .column = column };
-            if (coordinates.IsValid()) {
-                return coordinates;
-            }
-
-            return std::nullopt;
-        }
+        static std::optional<Coordinates> FromAlgebraicSquareNotation(std::string_view algebraic_square_notation);
     };
 
 
@@ -90,10 +75,5 @@ struct std::formatter<chess::Coordinates> {
     }
 };
 
-
-// now the formatter exists
-inline std::string chess::Coordinates::ToString() const {
-    return std::format("{}", *this);
-}
 
 #endif //NICHESS_COORDINATES_H

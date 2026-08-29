@@ -18,6 +18,7 @@ add_executable(nichess src/main.cpp
         src/chess/coordinates.h
         src/chess/move.h
         src/chess/castling_rights.h
+        src/chess/coordinates.cpp
 )
 
 
