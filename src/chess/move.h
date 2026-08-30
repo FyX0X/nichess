@@ -43,6 +43,14 @@ namespace chess {
         PieceType promotion_type;
 
 
+        /**
+         * Compares a move with this object to check if they match.
+         * TODO: currently does not compare 'moving_piece'.
+         * @param move The real move object to compare this LAN move to.
+         * @return True if the LAN matches 'move'.
+         */
+        [[nodiscard]] bool Matches(const Move& move) const;
+
         [[nodiscard]] std::string ToLongAlgebraicNotation() const;
 
         /**

@@ -71,6 +71,8 @@ namespace chess {
          */
         bool MakeLegalMove(const Move& move);
 
+        bool MakeLegalMoveLAN(const MoveLAN& move_lan);
+
 
         [[nodiscard]] bool IsInCheck() const { return is_in_check_; }
 

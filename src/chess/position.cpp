@@ -329,6 +329,17 @@ namespace chess {
         return true;
     }
 
+    bool Position::MakeLegalMoveLAN(const MoveLAN &move_lan) {
+        const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
+        for (const Move& move : legal_moves) {
+            if (move_lan.Matches(move)) {
+                MakeMove(move);
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     void Position::ComputeMovesForPlayer(Player player) {
 
@@ -548,7 +559,6 @@ namespace chess {
             bool castle_available = true;
             for (int col = 5; col < 7; ++col) {
                 Coordinates coords = { .row = from.row, .column = col };
-                std::println("testing {}", coords);
                 if (!GetPiece(coords).IsEmpty() || DoesPlayerTargetCoordinates(GetOtherPlayer(player), coords)) {
                     castle_available = false;
                     break;
@@ -603,7 +613,7 @@ namespace chess {
         Piece target_piece = GetPiece(to);
 
         assert(moved_piece.player == active_player_);
-        assert(move.capture != (target_piece.IsEmpty()));
+        assert( ( move.capture != target_piece.IsEmpty() ) || ( move.en_passant && target_piece.IsEmpty() ) );
 
         SetPiece(from, kEmptyPiece);
         SetPiece(to, moved_piece);
@@ -642,7 +652,8 @@ namespace chess {
         }
 
         if (en_passant) {
-            Coordinates pawn_taken_en_passant_coords = from + GetPawnMoveDirection(active_player_);
+            // pawn taken en passant coords is on square after where we take.
+            Coordinates pawn_taken_en_passant_coords = to + GetPawnMoveDirection(GetOtherPlayer(active_player_));
             assert(pawn_taken_en_passant_coords.IsValid() && GetPiece(pawn_taken_en_passant_coords).type == PieceType::Pawn);
             SetPiece(pawn_taken_en_passant_coords, kEmptyPiece);
         }

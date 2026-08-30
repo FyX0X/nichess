@@ -69,16 +69,34 @@ int main() {
 
 
     std::println("{}", position.ToString());
-    std::println("Press enter to play a move (not Q): ");
-    while (std::getchar() != 'q') {
-    const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
+
+    std::string input;
+    while (true) {
+        const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
         if (moves.empty()) {
             std::println("no more playable moves");
             break;
         }
-        position.MakeLegalMove(utility::ranges::RandomChoice(moves));
-        std::println("{}", position.ToString());
-        std::println("Press enter to play a move (not Q): ");
+
+        std::println("Enter a move in LAN format: ");
+        std::cin >> input;
+        if (input == "q") {
+            std::println("Exiting...");
+            break;
+        }
+
+        std::optional<chess::MoveLAN> move_lan = chess::MoveLAN::FromLongAlgebraicNotation(input);
+        if (!move_lan.has_value()) {
+            std::println("Unrecognized lan format: {}\t\t('q' to quit)", input);
+            continue;
+        }
+
+        if ( !position.MakeLegalMoveLAN(move_lan.value())) {
+            std::println("Illegal move: {}", move_lan.value().ToLongAlgebraicNotation());
+            continue;
+        }
+
+        std::println("Playing move: {}\n{}", move_lan.value().ToLongAlgebraicNotation(), position.ToString());
 
     }
 

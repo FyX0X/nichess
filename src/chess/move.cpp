@@ -11,6 +11,11 @@
 
 
 namespace chess {
+
+    bool MoveLAN::Matches(const Move &move) const {
+        return move.from == from && move.to == to && move.capture == capture && move.promotion_type == promotion_type;
+    }
+
     std::string MoveLAN::ToLongAlgebraicNotation() const {
         std::string piece_char = (moving_piece == PieceType::Pawn) ? "" : std::format("{}", std::to_underlying(moving_piece));
         char capture_char = (capture) ? 'x' : '-';
@@ -37,7 +42,8 @@ namespace chess {
         index += 2;
         if (check_promotion && lan_str.size() > index) {
             promotion_type = static_cast<PieceType>(lan_str[index++]);
-            assert(utility::ranges::Contains(kPromotableTypes, promotion_type) && "Promoting to illegal piece type.");
+            return std::nullopt;
+            // assert(utility::ranges::Contains(kPromotableTypes, promotion_type) && "Promoting to illegal piece type.");
         }
 
         if (! (from.has_value() && to.has_value()) ) {
