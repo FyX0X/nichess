@@ -3,7 +3,7 @@
 
 #include "chess/position.h"
 #include "notation/fen.h"
-#include "utility/vector_utils.h"
+#include "utility/ranges_utils.h"
 
 static void GameInfo(const chess::Position& position) {
     std::println("Game Info: \n\n{}", position.ToString());
@@ -76,7 +76,7 @@ int main() {
             std::println("no more playable moves");
             break;
         }
-        position.MakeLegalMove(utility::vectors::RandomChoice(moves));
+        position.MakeLegalMove(utility::ranges::RandomChoice(moves));
         std::println("{}", position.ToString());
         std::println("Press enter to play a move (not Q): ");
 

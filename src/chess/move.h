@@ -7,6 +7,8 @@
 
 
 #include "coordinates.h"
+#include "piece.h"
+
 
 namespace chess {
 
@@ -27,6 +29,30 @@ namespace chess {
         {}
 
         bool operator==(const Move&) const = default;
+    };
+
+
+    /**
+     * Represent LAN notation of a move that will be passed to a Position object to convert it to a real Move
+     */
+    struct MoveLAN {
+        PieceType moving_piece;
+        Coordinates from;
+        Coordinates to;
+        bool capture;
+        PieceType promotion_type;
+
+
+        [[nodiscard]] std::string ToLongAlgebraicNotation() const;
+
+        /**
+         * <LAN move descriptor piece moves> ::= <Piece symbol><from square>['-'|'x']<to square>
+         * <LAN move descriptor pawn moves>  ::= <from square>['-'|'x']<to square>[<promoted to>]
+         * <Piece symbol> ::= 'N' | 'B' | 'R' | 'Q' | 'K'
+         * @param lan_str a move in LAN format.
+         * @return The move id represented the the given string.
+         */
+        static std::optional<MoveLAN> FromLongAlgebraicNotation(std::string_view lan_str);
     };
 
 }

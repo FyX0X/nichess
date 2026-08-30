@@ -20,8 +20,9 @@ add_executable(nichess src/main.cpp
         src/chess/castling_rights.h
         src/chess/coordinates.cpp
         src/chess/irreversible_aspects.h
-        src/utility/vector_utils.cpp
-        src/utility/vector_utils.h
+        src/utility/ranges_utils.cpp
+        src/utility/ranges_utils.h
+        src/chess/move.cpp
 )
 
 

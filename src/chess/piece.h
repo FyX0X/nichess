@@ -21,6 +21,13 @@ namespace chess {
         King = 'K'
     };
 
+    constexpr std::array<PieceType, 5> kNonPawnTypes = {
+        PieceType::Knight, PieceType::Bishop, PieceType::Rook, PieceType::Queen, PieceType::King
+    };
+    constexpr std::array<PieceType, 4> kPromotableTypes = {
+        PieceType::Knight, PieceType::Bishop, PieceType::Rook, PieceType::Queen
+    };
+
     enum class Player : std::uint8_t {
         None = 0,
         White,

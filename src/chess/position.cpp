@@ -9,7 +9,7 @@
 #include <sstream>
 #include <ranges>
 
-#include "utility/vector_utils.h"
+#include "utility/ranges_utils.h"
 
 
 namespace chess {
@@ -51,13 +51,6 @@ namespace chess {
         {.row = -1, .column = -2},
         {.row = 1, .column = -2},
         {.row = 2, .column = -1}
-    };
-
-    constexpr std::array<PieceType, 4> kPromotablePieces = {
-        PieceType::Knight,
-        PieceType::Bishop,
-        PieceType::Rook,
-        PieceType::Queen
     };
 
 
@@ -329,7 +322,7 @@ namespace chess {
 
         const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
 
-        if (!utility::vectors::Contains(legal_moves, move)) {
+        if (!utility::ranges::Contains(legal_moves, move)) {
             return false;
         }
         MakeMove(move);
@@ -446,7 +439,7 @@ namespace chess {
         assert(!move.en_passant);
         assert(!move.double_pawn);
         Move promotion = move;
-        for (const PieceType promoted_type : kPromotablePieces) {
+        for (const PieceType promoted_type : kPromotableTypes) {
             promotion.promotion_type = promoted_type;
             AddMoveToPlayer(promotion, player);
         }
@@ -471,7 +464,7 @@ namespace chess {
             Move move(from, to);
             if (promotion) {
                 GeneratePromotionMoves(move, player);
-                count += kPromotablePieces.size();
+                count += kPromotableTypes.size();
             } else {
                 AddMoveToPlayer(move, player);
                 count++;
@@ -502,7 +495,7 @@ namespace chess {
 
                 if (promotion) {
                     GeneratePromotionMoves(move, player);
-                    count += kPromotablePieces.size();
+                    count += kPromotableTypes.size();
                 } else {
                     AddMoveToPlayer(move, player);
                     AddTargetedSquareToPlayer(to, player);
