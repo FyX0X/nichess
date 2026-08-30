@@ -91,6 +91,9 @@ namespace chess {
         void GenerateLegalMovesFromCoordinates(const Coordinates& from, Player player);
 
         void GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player);
+
+        void GeneratePromotionMoves(const Move &move, Player player);
+
         void GenerateDirectMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player);
 
         void GeneratePawnMoves(const Coordinates& from, Player player);

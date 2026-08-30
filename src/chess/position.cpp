@@ -51,6 +51,13 @@ namespace chess {
         {.row = 2, .column = -1}
     };
 
+    constexpr std::array<PieceType, 4> kPromotablePieces = {
+        PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Rook,
+        PieceType::Queen
+    };
+
 
 #pragma endregion
 
@@ -229,31 +236,31 @@ namespace chess {
 
     void Position::EnsurePossibleCastlingRights() {
         if (GetPiece(kWhiteKingSquare) != kWhiteKing) {
-            std::println("White castling removed");
+            // std::println("White castling removed");
             castling_rights_.white_kingside = false;
             castling_rights_.white_queenside = false;
         }
         if (GetPiece(kWhiteRookKingsideSquare) != kWhiteRook) {
-            std::println("White king castling removed");
+            //std::println("White king castling removed");
             castling_rights_.white_kingside = false;
         }
         if (GetPiece(kWhiteRookQueensideSquare) != kWhiteRook) {
 
-            std::println("White queen castling removed");
+            //std::println("White queen castling removed");
             castling_rights_.white_queenside = false;
         }
 
         if (GetPiece(kBlackKingSquare) != kBlackKing) {
-            std::println("Black castling removed");
+            //std::println("Black castling removed");
             castling_rights_.black_kingside = false;
             castling_rights_.black_queenside = false;
         }
         if (GetPiece(kBlackRookKingsideSquare) != kBlackRook) {
-            std::println("Black king castling removed");
+            //std::println("Black king castling removed");
             castling_rights_.black_kingside = false;
         }
         if (GetPiece(kBlackRookQueensideSquare) != kBlackRook) {
-            std::println("Black queen castling removed");
+            //std::println("Black queen castling removed");
             castling_rights_.black_queenside = false;
         }
     }
@@ -404,8 +411,22 @@ namespace chess {
         // std::println("Added '{}' moves from {}", count, from);
     }
 
+
+    void Position::GeneratePromotionMoves(const Move& move, Player player) {
+        assert(move.to.row == GetPieceStartingRank(GetOtherPlayer(player)));
+        assert(!move.en_passant);
+        assert(!move.double_pawn);
+        Move promotion = move;
+        for (const PieceType promoted_type : kPromotablePieces) {
+            promotion.promotion_type = promoted_type;
+            AddMoveToPlayer(promotion, player);
+        }
+        if (move.capture) {
+            AddTargetedSquareToPlayer(move.to, player);
+        }
+    }
+
     void Position::GeneratePawnMoves(const Coordinates& from, Player player) {
-        // TODO
 
         assert(GetPiece(from).player == player);
         int count = 0;
@@ -413,13 +434,19 @@ namespace chess {
         int dy = (player == Player::White) ? 1 : -1;
         Coordinates direction = {.row = dy, .column = 0};
 
+        // if currently on row before last -> promotion when moving pawn.
+        bool promotion = from.row == GetPawnStartingRank(GetOtherPlayer(player));
+
         Coordinates to = from + direction;
         if (to.IsValid() && GetPiece(to).IsEmpty()) {
             Move move(from, to);
-            AddMoveToPlayer(move, player);
-            count++;
-
-            // todo check promotion and generate each move
+            if (promotion) {
+                GeneratePromotionMoves(move, player);
+                count += kPromotablePieces.size();
+            } else {
+                AddMoveToPlayer(move, player);
+                count++;
+            }
 
             // second step if starting row and unobstructed.
             if (from.row == GetPawnStartingRank(player)) {
@@ -442,11 +469,15 @@ namespace chess {
                 Move move(from, to);
                 move.capture = true;
                 move.en_passant = is_en_passant;
-                AddMoveToPlayer(move, player);
-                AddTargetedSquareToPlayer(to, player);
-                count++;
 
-                // todo check promotion
+                if (promotion) {
+                    GeneratePromotionMoves(move, player);
+                    count += kPromotablePieces.size();
+                } else {
+                    AddMoveToPlayer(move, player);
+                    AddTargetedSquareToPlayer(to, player);
+                    count++;
+                }
             }
         }
 
@@ -471,8 +502,6 @@ namespace chess {
 
     void Position::GenerateKingMoves(const Coordinates& from, Player player) {
         GenerateDirectMoves(from, kAllDirections, player);
-
-        // todo add castle
     }
 
     void Position::GenerateCastleMoves(const Player player) {
