@@ -602,7 +602,7 @@ namespace chess {
     void Position::MakeMove(const Move &move) {
         // TODO
         IrreversibleAspects new_aspects = GetIrreversibleAspects();
-
+        new_aspects.en_passant = std::nullopt;
         new_aspects.half_move_clock++;
 
         auto [from, to, double_pawn, capture, en_passant, castle_kingside, castle_queenside, promotion_type] = move;
