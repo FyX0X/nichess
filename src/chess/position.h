@@ -14,6 +14,7 @@
 #include "coordinates.h"
 #include "move.h"
 #include "castling_rights.h"
+#include "irreversible_aspects.h"
 
 namespace chess {
 
@@ -47,21 +48,32 @@ namespace chess {
         }
 
 
-        [[nodiscard]] CastlingRights GetCastlingRights() const { return castling_rights_; }
+        [[nodiscard]] CastlingRights GetCastlingRights() const { return irreversible_aspects_stack_.back().castling_rights; }
 
-        [[nodiscard]] int GetHalfMoveClock() const { return half_move_clock_; }
+        [[nodiscard]] int GetHalfMoveClock() const { return irreversible_aspects_stack_.back().half_move_clock; }
         [[nodiscard]] int GetMoveCount() const { return move_count_; }
 
 
         [[nodiscard]] const std::vector<Move>& GetLegalMovesForPlayer(Player player) const;
 
-        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return en_passant_; }
+        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return irreversible_aspects_stack_.back().en_passant; }
 
 
         // setters
 
         // Moves
         [[nodiscard]] const std::vector<Move> &GetActivePlayerMoves() const;
+
+        /**
+         * Tries to perform a move (only if legal).
+         * @param move The legal move to play.
+         * @return True if the move was successfully played.
+         */
+        bool MakeLegalMove(const Move& move);
+
+
+        [[nodiscard]] bool IsInCheck() const { return is_in_check_; }
+
 
     private:
 
@@ -77,10 +89,18 @@ namespace chess {
         /** Limits the granted rights to what is possible with remaining pieces. */
         void EnsurePossibleCastlingRights();
 
+#pragma region Modifiable Getters
+
         std::vector<Move>& GetLegalMovesForPlayer(Player player); // modifiable version
         std::array<std::array<bool, 8>, 8>& GetPlayerTargetedSquares(const Player player) { // modifiable version
             return (player == Player::White) ? white_targets_ : black_targets_;
         }
+
+        CastlingRights& GetCastlingRights() { return irreversible_aspects_stack_.back().castling_rights; }
+        std::optional<Coordinates>& GetEnPassant() { return irreversible_aspects_stack_.back().en_passant; }
+
+#pragma endregion
+
 
         void ComputeMovesForPlayer(Player player);
 
@@ -107,16 +127,20 @@ namespace chess {
         [[nodiscard]] bool DoesPlayerTargetCoordinates(Player player, Coordinates coordinates) const;
 
 
+        void MakeMove(const Move& move);
+        void UnmakeMove(const Move& move);
 
+        bool ComputeIsInCheck();
 
+        void PushIrreversibleAspects(const CastlingRights &castling_rights, const std::optional<Coordinates>& en_passant, int half_move_clock);
 
         // each char represents a board cell.
         // coordinates are row order (e.g: [0, 2] -> a3, [7][3] -> h4)
         std::array<std::array<Piece, 8>, 8> board_;
         Player active_player_ = Player::White;
-        CastlingRights castling_rights_{};
-        std::optional<Coordinates> en_passant_ = std::nullopt;
-        int half_move_clock_ = 0;
+
+        std::vector<IrreversibleAspects> irreversible_aspects_stack_{};
+
         int move_count_ = 1;
 
 
@@ -130,6 +154,8 @@ namespace chess {
 
         std::vector<Move> white_moves_ = {};
         std::vector<Move> black_moves_ = {};
+
+        bool is_in_check_ = false;
 
     };
 } // chess

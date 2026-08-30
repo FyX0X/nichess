@@ -9,6 +9,8 @@
 #include <sstream>
 #include <ranges>
 
+#include "utility/vector_utils.h"
+
 
 namespace chess {
 
@@ -109,6 +111,7 @@ namespace chess {
     Position::Position() :
         board_()
     {
+        PushIrreversibleAspects({}, std::nullopt, 0);
         EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
@@ -122,10 +125,9 @@ namespace chess {
                        std::optional<Coordinates> en_passant, int half_move_clock, int move_count) :
         board_(board),
         active_player_(active_player),
-        castling_rights_(castling_rights),
-        en_passant_(en_passant),
-        half_move_clock_(half_move_clock),
         move_count_(move_count) {
+
+        PushIrreversibleAspects(castling_rights, en_passant, half_move_clock);
 
         EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
@@ -136,6 +138,8 @@ namespace chess {
     }
 
     std::string Position::ToString() const {
+        const std::optional<Coordinates>& en_passant = GetEnPassant();
+
         std::stringstream boardStream;
         // reverse order since row 0 is at bottom
         boardStream << '\n' << (active_player_ == Player::White ? "White" : "Black") << " to play.\n";
@@ -150,8 +154,8 @@ namespace chess {
         }
         boardStream << "  -----------------\n";
         boardStream << "   a b c d e f g h \n";
-        if (en_passant_.has_value()) {
-            boardStream << std::format("(en passant allowed at square: {})\n", en_passant_.value());
+        if (en_passant.has_value()) {
+            boardStream << std::format("(en passant allowed at square: {})\n", en_passant.value());
         }
         return boardStream.str();
     }
@@ -206,11 +210,12 @@ namespace chess {
     }
 
     void Position::EnsureLegalEnPassantSquare() {
-        if (!en_passant_.has_value()) {
+        std::optional<Coordinates>& en_passant = GetEnPassant();
+        if (!en_passant.has_value()) {
             return;
         }
 
-        Coordinates coordinates = en_passant_.value();
+        Coordinates coordinates = en_passant.value();
         Player player_who_moved;
         Coordinates moved_pawn_coords{-1, -1};
         if (coordinates.row == 2) {
@@ -222,46 +227,47 @@ namespace chess {
             moved_pawn_coords = { .row = 4, .column = coordinates.column };
         } else {
             std::println(stderr, "[Warning] Position::EnsureLegalEnPassantSquare(): Invalid en_passant position: {}.", coordinates);
-            en_passant_.reset();
+            en_passant.reset();
             return;
         }
 
         Piece pawn = GetPiece(moved_pawn_coords);
         if (pawn.type != PieceType::Pawn || pawn.player != player_who_moved) {
             std::println(stderr, "[Warning] Position::EnsureLegalEnPassantSquare(): Invalid en_passant piece: {}.", pawn.ToChar());
-            en_passant_.reset();
+            en_passant.reset();
             return;
         }
     }
 
     void Position::EnsurePossibleCastlingRights() {
+        CastlingRights& castling_rights = GetCastlingRights();
         if (GetPiece(kWhiteKingSquare) != kWhiteKing) {
             // std::println("White castling removed");
-            castling_rights_.white_kingside = false;
-            castling_rights_.white_queenside = false;
+            castling_rights.white_kingside = false;
+            castling_rights.white_queenside = false;
         }
         if (GetPiece(kWhiteRookKingsideSquare) != kWhiteRook) {
             //std::println("White king castling removed");
-            castling_rights_.white_kingside = false;
+            castling_rights.white_kingside = false;
         }
         if (GetPiece(kWhiteRookQueensideSquare) != kWhiteRook) {
 
             //std::println("White queen castling removed");
-            castling_rights_.white_queenside = false;
+            castling_rights.white_queenside = false;
         }
 
         if (GetPiece(kBlackKingSquare) != kBlackKing) {
             //std::println("Black castling removed");
-            castling_rights_.black_kingside = false;
-            castling_rights_.black_queenside = false;
+            castling_rights.black_kingside = false;
+            castling_rights.black_queenside = false;
         }
         if (GetPiece(kBlackRookKingsideSquare) != kBlackRook) {
             //std::println("Black king castling removed");
-            castling_rights_.black_kingside = false;
+            castling_rights.black_kingside = false;
         }
         if (GetPiece(kBlackRookQueensideSquare) != kBlackRook) {
             //std::println("Black queen castling removed");
-            castling_rights_.black_queenside = false;
+            castling_rights.black_queenside = false;
         }
     }
 
@@ -305,6 +311,17 @@ namespace chess {
         return GetLegalMovesForPlayer(active_player_);
     }
 
+
+    bool Position::MakeLegalMove(const Move &move) {
+
+        const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
+
+        if (!utility::vectors::contains(legal_moves, move)) {
+            return false;
+        }
+        MakeMove(move);
+        return true;
+    }
 
 
     void Position::ComputeMovesForPlayer(Player player) {
@@ -461,10 +478,11 @@ namespace chess {
         }
 
         // Taking pieces diagonally
+        std::optional<Coordinates>& en_passant = GetEnPassant();
         std::vector<Coordinates> take_directions = { {.row = dy, .column = -1}, {.row = dy, .column = 1}};
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
-            bool is_en_passant = en_passant_.has_value() && en_passant_.value() == to;
+            bool is_en_passant = en_passant.has_value() && en_passant.value() == to;
             if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || is_en_passant) {
                 Move move(from, to);
                 move.capture = true;
@@ -507,6 +525,8 @@ namespace chess {
     void Position::GenerateCastleMoves(const Player player) {
         // TODO handle castle moves correctly when implementing move function.
 
+        CastlingRights& castling_rights = GetCastlingRights();
+
         Coordinates from = { .row = GetPieceStartingRank(player), .column = 4 };
 
         Piece king = GetPiece(from);
@@ -514,8 +534,8 @@ namespace chess {
         // std::println("generate castle moves, current opponent reach = {}",
         //     GetReachableSquaresString(GetOtherPlayer(player)));
 
-        if (player == Player::White && castling_rights_.white_kingside
-            || player == Player::Black && castling_rights_.black_kingside) {
+        if (player == Player::White && castling_rights.white_kingside
+            || player == Player::Black && castling_rights.black_kingside) {
 
             assert(king.type == PieceType::King);
             assert(king.player == player);
@@ -537,8 +557,8 @@ namespace chess {
             }
         }
         // TODO try to remove duplicate code for kingside / queenside
-        if (player == Player::White && castling_rights_.white_queenside
-            || player == Player::Black && castling_rights_.black_queenside) {
+        if (player == Player::White && castling_rights.white_queenside
+            || player == Player::Black && castling_rights.black_queenside) {
 
             assert(king.type == PieceType::King);
             assert(king.player == player);
@@ -567,6 +587,40 @@ namespace chess {
     }
 
 
+    void Position::MakeMove(const Move &move) {
+        // TODO
+    }
+
+    void Position::UnmakeMove(const Move &move) {
+        // TODO
+    }
+
+
+
+    bool Position::ComputeIsInCheck() {
+
+        Player other = GetOtherPlayer(active_player_);
+        const auto& active_player_coords = GetPlayerOccupiedSquares(active_player_);
+        Coordinates king_coordinates = {-1, -1};
+        for (const auto coord : active_player_coords) {
+            if (GetPiece(coord).type == PieceType::King) {
+                king_coordinates = coord;
+                break;
+            }
+        }
+        assert(king_coordinates.IsValid() && "No king Was Found!");
+
+        // update other player target squares
+        ComputeMovesForPlayer(other);
+
+        is_in_check_ = DoesPlayerTargetCoordinates(other, king_coordinates);
+        return is_in_check_;
+    }
+
+
+    void Position::PushIrreversibleAspects(const CastlingRights &castling_rights, const std::optional<Coordinates> &en_passant, int half_move_clock) {
+        irreversible_aspects_stack_.push_back(IrreversibleAspects(castling_rights, en_passant, half_move_clock));
+    }
 
 
 #pragma endregion
