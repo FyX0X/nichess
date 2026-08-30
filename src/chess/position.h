@@ -48,6 +48,8 @@ namespace chess {
         }
 
 
+        [[nodiscard]] const IrreversibleAspects& GetIrreversibleAspects() const { return irreversible_aspects_stack_.back(); }
+        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return irreversible_aspects_stack_.back().en_passant; }
         [[nodiscard]] CastlingRights GetCastlingRights() const { return irreversible_aspects_stack_.back().castling_rights; }
 
         [[nodiscard]] int GetHalfMoveClock() const { return irreversible_aspects_stack_.back().half_move_clock; }
@@ -55,8 +57,6 @@ namespace chess {
 
 
         [[nodiscard]] const std::vector<Move>& GetLegalMovesForPlayer(Player player) const;
-
-        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return irreversible_aspects_stack_.back().en_passant; }
 
 
         // setters
@@ -81,6 +81,8 @@ namespace chess {
         static int GetPieceStartingRank(Player player);
         static Player GetOtherPlayer(Player player);
         static bool CouldPlayerTakePiece(Player player, const Piece& piece);
+
+        void SetPiece(const Coordinates coordinates, const Piece piece) { board_[coordinates.row][coordinates.column] = piece; }
 
         void RecomputeRemainingPieces();
 
@@ -134,12 +136,15 @@ namespace chess {
 
         void PushIrreversibleAspects(const CastlingRights &castling_rights, const std::optional<Coordinates>& en_passant, int half_move_clock);
 
+        void PushIrreversibleAspects(const IrreversibleAspects &irreversible_aspects);
+
         // each char represents a board cell.
         // coordinates are row order (e.g: [0, 2] -> a3, [7][3] -> h4)
         std::array<std::array<Piece, 8>, 8> board_;
         Player active_player_ = Player::White;
 
         std::vector<IrreversibleAspects> irreversible_aspects_stack_{};
+        std::vector<Move> played_moves_{}; // TODO consider removing this if not needed ? for example PERFT already remembers moves in call stack.
 
         int move_count_ = 1;
 

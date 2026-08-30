@@ -61,6 +61,18 @@ namespace chess {
     };
 
 
+    static constexpr Coordinates GetPawnMoveDirection(const Player player) {
+        switch (player) {
+            case Player::White:
+                return kWhitePawnDirection;
+            case Player::Black:
+                return kBlackPawnDirection;
+            default:
+                return {};
+        }
+    }
+
+
 #pragma endregion
 
 #pragma region Static Functions
@@ -99,6 +111,7 @@ namespace chess {
     }
 
     /**
+     * @param player The player that checks if could take some piece
      * @param piece The target piece
      * @return if the target piece could be taken if another piece was targeting it (not current player and not king).
      */
@@ -316,7 +329,7 @@ namespace chess {
 
         const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
 
-        if (!utility::vectors::contains(legal_moves, move)) {
+        if (!utility::vectors::Contains(legal_moves, move)) {
             return false;
         }
         MakeMove(move);
@@ -342,7 +355,7 @@ namespace chess {
         GetPlayerTargetedSquares(player)[to.row][to.column] = true;
     }
 
-    // TODO consider changing args to P, std::vector<Move>& player_moves, std::array<std::array<bool, 8>, 8>& player_reachable instead of just Player playre
+    // TODO consider changing args to P, std::vector<Move>& player_moves, std::array<std::array<bool, 8>, 8>& player_reachable instead of just Player player
     void Position::AddMoveToPlayer(const Move& move, const Player player) {
         GetLegalMovesForPlayer(player).push_back(move);
     }
@@ -379,7 +392,6 @@ namespace chess {
     }
 
     void Position::GenerateDirectMoves(const Coordinates &from, const std::vector<Coordinates> &directions, Player player) {
-        Piece moving_piece = GetPiece(from);
         assert(GetPiece(from).player == player);
         int count = 0;
         for (const Coordinates& dir : directions) {
@@ -589,6 +601,125 @@ namespace chess {
 
     void Position::MakeMove(const Move &move) {
         // TODO
+        IrreversibleAspects new_aspects = GetIrreversibleAspects();
+
+        new_aspects.half_move_clock++;
+
+        auto [from, to, double_pawn, capture, en_passant, castle_kingside, castle_queenside, promotion_type] = move;
+        Piece moved_piece = GetPiece(from);
+        Piece target_piece = GetPiece(to);
+
+        assert(moved_piece.player == active_player_);
+        assert(move.capture != (target_piece.IsEmpty()));
+
+        SetPiece(from, kEmptyPiece);
+        SetPiece(to, moved_piece);
+
+        if (moved_piece.type == PieceType::Pawn) {
+            new_aspects.half_move_clock = 0;
+        }
+
+        if (moved_piece.type == PieceType::King) {
+            if (active_player_ == Player::White) {
+                new_aspects.castling_rights.white_kingside = false;
+                new_aspects.castling_rights.white_queenside = false;
+            } else {
+                new_aspects.castling_rights.black_kingside = false;
+                new_aspects.castling_rights.black_queenside = false;
+            }
+        }
+        if (moved_piece.type == PieceType::Rook) {
+            if (from == kWhiteRookKingsideSquare) {
+                new_aspects.castling_rights.white_kingside = false;
+            } else if (from == kWhiteRookQueensideSquare) {
+                new_aspects.castling_rights.white_queenside = false;
+            } else if (from == kBlackRookKingsideSquare) {
+                new_aspects.castling_rights.black_kingside = false;
+            } else if (from == kBlackRookQueensideSquare) {
+                new_aspects.castling_rights.black_queenside = false;
+            }
+        }
+
+        if (double_pawn) {
+            new_aspects.en_passant = from + GetPawnMoveDirection(active_player_); // one square from start pos.
+        }
+
+        if (capture) {
+            new_aspects.half_move_clock = 0;
+        }
+
+        if (en_passant) {
+            Coordinates pawn_taken_en_passant_coords = from + GetPawnMoveDirection(active_player_);
+            assert(pawn_taken_en_passant_coords.IsValid() && GetPiece(pawn_taken_en_passant_coords).type == PieceType::Pawn);
+            SetPiece(pawn_taken_en_passant_coords, kEmptyPiece);
+        }
+
+        if (castle_kingside) {
+            Coordinates king_square{};
+            Coordinates rook_square{};
+            Coordinates new_rook_square{};
+            if (active_player_ == Player::White) {
+                king_square = kWhiteKingSquare;
+                rook_square = kWhiteRookKingsideSquare;
+                new_rook_square = kWhiteBishopKingsideSquare;
+
+                new_aspects.castling_rights.white_kingside = false;
+                new_aspects.castling_rights.white_queenside = false;
+            } else {
+                king_square = kBlackKingSquare;
+                rook_square = kBlackRookKingsideSquare;
+                new_rook_square = kBlackBishopKingsideSquare;
+
+                new_aspects.castling_rights.black_kingside = false;
+                new_aspects.castling_rights.black_queenside = false;
+            }
+            Piece rook_piece = GetPiece(rook_square);
+            assert(from == king_square && rook_piece.type == PieceType::Rook);
+
+            SetPiece(rook_square, kEmptyPiece);
+            SetPiece(new_rook_square, rook_piece);
+        }
+
+        if (castle_queenside) {
+            Coordinates king_square{};
+            Coordinates rook_square{};
+            Coordinates new_rook_square{};
+            if (active_player_ == Player::White) {
+                king_square = kWhiteKingSquare;
+                rook_square = kWhiteRookQueensideSquare;
+                new_rook_square = kWhiteQueenSquare;
+
+                new_aspects.castling_rights.white_kingside = false;
+                new_aspects.castling_rights.white_queenside = false;
+            } else {
+                king_square = kBlackKingSquare;
+                rook_square = kBlackRookQueensideSquare;
+                new_rook_square = kBlackQueenSquare;
+
+                new_aspects.castling_rights.black_kingside = false;
+                new_aspects.castling_rights.black_queenside = false;
+            }
+            Piece rook_piece = GetPiece(rook_square);
+            assert(from == king_square && rook_piece.type == PieceType::Rook);
+
+            SetPiece(rook_square, kEmptyPiece);
+            SetPiece(new_rook_square, rook_piece);
+        }
+
+        if (promotion_type != PieceType::None) {
+            SetPiece(to, { .type = promotion_type, .player = active_player_ });
+        }
+
+        PushIrreversibleAspects(new_aspects);
+        played_moves_.push_back(move);
+        if (active_player_ == Player::Black) {
+            move_count_++;
+        }
+        active_player_ = GetOtherPlayer(active_player_);
+
+        RecomputeRemainingPieces();
+        ComputeMovesForPlayer(Player::White);
+        ComputeMovesForPlayer(Player::Black);
     }
 
     void Position::UnmakeMove(const Move &move) {
@@ -620,6 +751,10 @@ namespace chess {
 
     void Position::PushIrreversibleAspects(const CastlingRights &castling_rights, const std::optional<Coordinates> &en_passant, int half_move_clock) {
         irreversible_aspects_stack_.push_back(IrreversibleAspects(castling_rights, en_passant, half_move_clock));
+    }
+
+    void Position::PushIrreversibleAspects(const IrreversibleAspects &irreversible_aspects) {
+        irreversible_aspects_stack_.push_back(irreversible_aspects);
     }
 
 

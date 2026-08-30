@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <optional>
+
 #include "utility/string_utils.h"
 
 namespace chess {
@@ -52,6 +53,9 @@ namespace chess {
     constexpr Coordinates kBlackKnightQueensideSquare = { .row = 7, .column = 1 };
     constexpr Coordinates kBlackBishopKingsideSquare = { .row = 7, .column = 5 };
     constexpr Coordinates kBlackBishopQueensideSquare = { .row = 7, .column = 2 };
+
+    constexpr Coordinates kWhitePawnDirection = { .row = 1, .column = 0 };
+    constexpr Coordinates kBlackPawnDirection = { .row = -1, .column = 0 };
 
 } // chess
 

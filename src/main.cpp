@@ -3,6 +3,7 @@
 
 #include "chess/position.h"
 #include "notation/fen.h"
+#include "utility/vector_utils.h"
 
 static void GameInfo(const chess::Position& position) {
     std::println("Game Info: \n\n{}", position.ToString());
@@ -40,6 +41,7 @@ static void TestCoordinatesConvertion() {
 
 int main() {
 
+    /*
     TestCoordinatesConvertion();
 
     chess::Position position;
@@ -60,8 +62,25 @@ int main() {
 
 
     std::println("check en passant");
-    GameInfoFEN("k7/8/8/2pPPpP1/8/8/8/K7 w - f6 0 1");
+    GameInfoFEN("k7/8/8/2pPPpP1/8/8/8/K7 w - f6 0 1");*/
 
+
+    chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
+
+
+    std::println("{}", position.ToString());
+    std::println("Press enter to play a move (not Q): ");
+    while (std::getchar() != 'q') {
+    const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
+        if (moves.empty()) {
+            std::println("no more playable moves");
+            break;
+        }
+        position.MakeLegalMove(utility::vectors::RandomChoice(moves));
+        std::println("{}", position.ToString());
+        std::println("Press enter to play a move (not Q): ");
+
+    }
 
     return 0;
 
