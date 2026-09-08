@@ -48,11 +48,11 @@ namespace chess {
         }
 
 
-        [[nodiscard]] const IrreversibleAspects& GetIrreversibleAspects() const { return irreversible_aspects_stack_.back(); }
-        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return irreversible_aspects_stack_.back().en_passant; }
-        [[nodiscard]] CastlingRights GetCastlingRights() const { return irreversible_aspects_stack_.back().castling_rights; }
+        [[nodiscard]] const IrreversibleAspects& GetIrreversibleAspects() const { return irreversible_aspects_; }
+        [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return irreversible_aspects_.en_passant; }
+        [[nodiscard]] CastlingRights GetCastlingRights() const { return irreversible_aspects_.castling_rights; }
 
-        [[nodiscard]] int GetHalfMoveClock() const { return irreversible_aspects_stack_.back().half_move_clock; }
+        [[nodiscard]] int GetHalfMoveClock() const { return irreversible_aspects_.half_move_clock; }
         [[nodiscard]] int GetMoveCount() const { return move_count_; }
 
 
@@ -100,8 +100,8 @@ namespace chess {
             return (player == Player::White) ? white_targets_ : black_targets_;
         }
 
-        CastlingRights& GetCastlingRights() { return irreversible_aspects_stack_.back().castling_rights; }
-        std::optional<Coordinates>& GetEnPassant() { return irreversible_aspects_stack_.back().en_passant; }
+        CastlingRights& GetCastlingRights() { return irreversible_aspects_.castling_rights; }
+        std::optional<Coordinates>& GetEnPassant() { return irreversible_aspects_.en_passant; }
 
 #pragma endregion
 
@@ -136,17 +136,12 @@ namespace chess {
 
         bool ComputeIsInCheck();
 
-        void PushIrreversibleAspects(const CastlingRights &castling_rights, const std::optional<Coordinates>& en_passant, int half_move_clock);
-
-        void PushIrreversibleAspects(const IrreversibleAspects &irreversible_aspects);
-
         // each char represents a board cell.
         // coordinates are row order (e.g: [0, 2] -> a3, [7][3] -> h4)
         std::array<std::array<Piece, 8>, 8> board_;
         Player active_player_ = Player::White;
 
-        std::vector<IrreversibleAspects> irreversible_aspects_stack_{};
-        std::vector<Move> played_moves_{}; // TODO consider removing this if not needed ? for example PERFT already remembers moves in call stack.
+        IrreversibleAspects irreversible_aspects_{};
 
         int move_count_ = 1;
 

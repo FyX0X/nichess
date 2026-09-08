@@ -115,9 +115,9 @@ namespace chess {
 #pragma endregion
 
     Position::Position() :
+        irreversible_aspects_({}, std::nullopt, 0),
         board_()
     {
-        PushIrreversibleAspects({}, std::nullopt, 0);
         EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
@@ -129,11 +129,12 @@ namespace chess {
     Position::Position(const std::array<std::array<Piece, 8>, 8> &board,
                        Player active_player, const CastlingRights& castling_rights,
                        std::optional<Coordinates> en_passant, int half_move_clock, int move_count) :
+
+        irreversible_aspects_(castling_rights, en_passant, half_move_clock),
         board_(board),
         active_player_(active_player),
         move_count_(move_count) {
 
-        PushIrreversibleAspects(castling_rights, en_passant, half_move_clock);
 
         EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
@@ -713,9 +714,7 @@ namespace chess {
         if (promotion_type != PieceType::None) {
             SetPiece(to, { .type = promotion_type, .player = active_player_ });
         }
-
-        PushIrreversibleAspects(new_aspects);
-        played_moves_.push_back(move);
+        irreversible_aspects_ = new_aspects;
         if (active_player_ == Player::Black) {
             move_count_++;
         }
@@ -752,14 +751,6 @@ namespace chess {
         return is_in_check_;
     }
 
-
-    void Position::PushIrreversibleAspects(const CastlingRights &castling_rights, const std::optional<Coordinates> &en_passant, int half_move_clock) {
-        irreversible_aspects_stack_.push_back(IrreversibleAspects(castling_rights, en_passant, half_move_clock));
-    }
-
-    void Position::PushIrreversibleAspects(const IrreversibleAspects &irreversible_aspects) {
-        irreversible_aspects_stack_.push_back(irreversible_aspects);
-    }
 
 
 #pragma endregion
