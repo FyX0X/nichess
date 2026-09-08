@@ -17,12 +17,12 @@ namespace utility::strings {
     constexpr char ToUpperCase(char c) { return static_cast<char>(std::toupper(static_cast<unsigned char>(c))); }
 
     constexpr std::string ToLowerCase(std::string_view str) {
-        std::string result;
+        std::string result(str);
         std::transform(str.begin(), str.end(), result.begin(), ::tolower);
         return result;
     }
     constexpr std::string ToUpperCase(std::string_view str) {
-        std::string result;
+        std::string result(str);
         std::transform(str.begin(), str.end(), result.begin(), ::toupper);
         return result;
     }
