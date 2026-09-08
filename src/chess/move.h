@@ -23,10 +23,12 @@ namespace chess {
         PieceType promotion_type = PieceType::None;
         PieceType capture_type = PieceType::None;
 
+        Move() = default;
         Move(const Coordinates from, const Coordinates to) :
             from(from),
             to(to)
         {}
+
 
         bool operator==(const Move&) const = default;
     };

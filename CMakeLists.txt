@@ -23,6 +23,8 @@ add_executable(nichess src/main.cpp
         src/utility/ranges_utils.cpp
         src/utility/ranges_utils.h
         src/chess/move.cpp
+        src/chess/perft.cpp
+        src/chess/perft.h
 )
 
 

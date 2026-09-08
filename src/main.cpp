@@ -4,6 +4,12 @@
 #include "chess/position.h"
 #include "notation/fen.h"
 #include "utility/ranges_utils.h"
+#include "chess/perft.h"
+
+
+constexpr bool kDoPerft = true;
+constexpr bool kDoPlayGame = false;
+
 
 static void GameInfo(const chess::Position& position) {
     std::println("Game Info: \n\n{}", position.ToString());
@@ -38,33 +44,13 @@ static void TestCoordinatesConvertion() {
     }
 }
 
+static void TestPerft() {
+    chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
+    chess::Perft perft(position);
+    perft.PerformPerftAndPrintInfo(1);
+}
 
-int main() {
-
-    /*
-    TestCoordinatesConvertion();
-
-    chess::Position position;
-    GameInfo(position);
-
-    GameInfoFEN(notation::fen::kDefaultFEN);
-
-
-    std::string hikaru_fen = "8/6pp/p1r1R3/8/P3N2P/3k1P2/6PK/8 b - - 0 39";
-    GameInfoFEN(hikaru_fen);
-
-
-    GameInfoFEN("8/8/4N3/8/8/2K5/8/8 w - - 0 1");
-
-    std::println("castle check");
-
-    GameInfoFEN("r3k3/8/8/8/6B1/2n5/8/R3K2R w KQq - 0 1");
-
-
-    std::println("check en passant");
-    GameInfoFEN("k7/8/8/2pPPpP1/8/8/8/K7 w - f6 0 1");*/
-
-
+static void PlayGame() {
     chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
 
     chess::Move move(chess::Coordinates{}, chess::Coordinates{});
@@ -116,6 +102,42 @@ int main() {
 
         std::println("Playing move: {}\n{}", move_lan.value().ToLongAlgebraicNotation(), position.ToString());
 
+    }
+}
+
+
+int main() {
+
+    /*
+    TestCoordinatesConvertion();
+
+    chess::Position position;
+    GameInfo(position);
+
+    GameInfoFEN(notation::fen::kDefaultFEN);
+
+
+    std::string hikaru_fen = "8/6pp/p1r1R3/8/P3N2P/3k1P2/6PK/8 b - - 0 39";
+    GameInfoFEN(hikaru_fen);
+
+
+    GameInfoFEN("8/8/4N3/8/8/2K5/8/8 w - - 0 1");
+
+    std::println("castle check");
+
+    GameInfoFEN("r3k3/8/8/8/6B1/2n5/8/R3K2R w KQq - 0 1");
+
+
+    std::println("check en passant");
+    GameInfoFEN("k7/8/8/2pPPpP1/8/8/8/K7 w - f6 0 1");*/
+
+
+    if (kDoPerft) {
+        TestPerft();
+    }
+
+    if (kDoPlayGame) {
+        PlayGame();
     }
 
     return 0;
