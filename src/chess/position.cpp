@@ -408,7 +408,7 @@ namespace chess {
             Piece piece = GetPiece(to);
             if (piece.IsEmpty() || CouldPlayerTakePiece(player, piece)) {
                 Move move(from, to);
-                move.capture = !piece.IsEmpty();
+                move.capture_type = piece.type;
                 AddMoveToPlayer(move, player);
                 count++;
             }
@@ -434,7 +434,7 @@ namespace chess {
                 }
                 if (CouldPlayerTakePiece(player, piece)) {
                     Move move(from, to);
-                    move.capture = true;
+                    move.capture_type = piece.type;
                     AddMoveToPlayer(move, player);
                     count++;
                 }
@@ -455,7 +455,7 @@ namespace chess {
             promotion.promotion_type = promoted_type;
             AddMoveToPlayer(promotion, player);
         }
-        if (move.capture) {
+        if (move.capture_type != PieceType::None) {
             AddTargetedSquareToPlayer(move.to, player);
         }
     }
@@ -500,9 +500,10 @@ namespace chess {
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
             bool is_en_passant = en_passant.has_value() && en_passant.value() == to;
-            if (to.IsValid() && CouldPlayerTakePiece(player, GetPiece(to)) || is_en_passant) {
+            Piece target_piece = GetPiece(to);
+            if (to.IsValid() && CouldPlayerTakePiece(player, target_piece) || is_en_passant) {
                 Move move(from, to);
-                move.capture = true;
+                move.capture_type = target_piece.type;
                 move.en_passant = is_en_passant;
 
                 if (promotion) {
@@ -609,12 +610,12 @@ namespace chess {
         new_aspects.en_passant = std::nullopt;
         new_aspects.half_move_clock++;
 
-        auto [from, to, double_pawn, capture, en_passant, castle_kingside, castle_queenside, promotion_type] = move;
+        auto [from, to, double_pawn, en_passant, castle_kingside, castle_queenside, promotion_type, capture_type] = move;
         Piece moved_piece = GetPiece(from);
         Piece target_piece = GetPiece(to);
 
         assert(moved_piece.player == active_player_);
-        assert( ( move.capture != target_piece.IsEmpty() ) || ( move.en_passant && target_piece.IsEmpty() ) );
+        assert( ( move.capture_type == target_piece.type ) || ( move.en_passant && target_piece.IsEmpty() ) );
 
         SetPiece(from, kEmptyPiece);
         SetPiece(to, moved_piece);
@@ -648,7 +649,7 @@ namespace chess {
             new_aspects.en_passant = from + GetPawnMoveDirection(active_player_); // one square from start pos.
         }
 
-        if (capture) {
+        if (capture_type != PieceType::None) {
             new_aspects.half_move_clock = 0;
         }
 
@@ -725,7 +726,7 @@ namespace chess {
         ComputeMovesForPlayer(Player::Black);
     }
 
-    void Position::UnmakeMove(const Move &move) {
+    void Position::UnmakeMove(const Move &move, const IrreversibleAspects& prev_aspects) {
         // TODO
     }
 

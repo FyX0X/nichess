@@ -13,7 +13,7 @@
 namespace chess {
 
     bool MoveLAN::Matches(const Move &move) const {
-        return move.from == from && move.to == to && move.capture == capture && move.promotion_type == promotion_type;
+        return move.from == from && move.to == to && (move.capture_type != PieceType::None) == capture && move.promotion_type == promotion_type;
     }
 
     std::string MoveLAN::ToLongAlgebraicNotation() const {

@@ -132,7 +132,7 @@ namespace chess {
 
 
         void MakeMove(const Move& move);
-        void UnmakeMove(const Move& move);
+        void UnmakeMove(const Move& move, const IrreversibleAspects& prev_aspects);
 
         bool ComputeIsInCheck();
 

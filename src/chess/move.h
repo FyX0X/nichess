@@ -17,11 +17,11 @@ namespace chess {
         Coordinates from;
         Coordinates to;
         bool double_pawn = false;
-        bool capture = false;
         bool en_passant = false;
         bool castle_kingside = false;
         bool castle_queenside = false;
         PieceType promotion_type = PieceType::None;
+        PieceType capture_type = PieceType::None;
 
         Move(const Coordinates from, const Coordinates to) :
             from(from),
