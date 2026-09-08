@@ -505,8 +505,8 @@ namespace chess {
             Piece target_piece = GetPiece(to);
             if (to.IsValid() && CouldPlayerTakePiece(player, target_piece) || is_en_passant) {
                 Move move(from, to);
-                move.capture_type = target_piece.type;
                 move.en_passant = is_en_passant;
+                move.capture_type = is_en_passant ? PieceType::Pawn : target_piece.type;
 
                 if (promotion) {
                     GeneratePromotionMoves(move, player);
