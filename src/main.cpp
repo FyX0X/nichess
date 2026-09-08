@@ -67,9 +67,12 @@ int main() {
 
     chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
 
+    chess::Move move(chess::Coordinates{}, chess::Coordinates{});
+    std::vector<chess::Move> played_moves;
+    std::vector<chess::IrreversibleAspects> irreversible_stack;
+    irreversible_stack.push_back(position.GetIrreversibleAspects());
 
     std::println("{}", position.ToString());
-
     std::string input;
     while (true) {
         const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
@@ -80,9 +83,22 @@ int main() {
 
         std::println("Enter a move in LAN format: ");
         std::cin >> input;
-        if (input == "q") {
+        std::string lower_case = utility::strings::ToLowerCase(input);
+        if (lower_case == "q") {
             std::println("Exiting...");
             break;
+        }
+        if (lower_case == "undo") {
+            if (played_moves.empty()) {
+                std::println("No moves to undo.");
+                continue;
+            }
+            position.UnmakeMove(played_moves.back(), irreversible_stack.back());
+            played_moves.pop_back();
+            irreversible_stack.pop_back();
+
+            std::println("Undoing move...\n{}", position.ToString());
+            continue;
         }
 
         std::optional<chess::MoveLAN> move_lan = chess::MoveLAN::FromLongAlgebraicNotation(input);
@@ -90,11 +106,13 @@ int main() {
             std::println("Unrecognized lan format: {}\t\t('q' to quit)", input);
             continue;
         }
-
-        if ( !position.MakeLegalMoveLAN(move_lan.value())) {
+        if ( !position.MakeLegalMoveLAN(move_lan.value(), move)) {
             std::println("Illegal move: {}", move_lan.value().ToLongAlgebraicNotation());
             continue;
         }
+        std::println("main(): move: {} -> {}", move.from, move.to);
+        played_moves.push_back(move);
+        irreversible_stack.push_back(position.GetIrreversibleAspects());
 
         std::println("Playing move: {}\n{}", move_lan.value().ToLongAlgebraicNotation(), position.ToString());
 

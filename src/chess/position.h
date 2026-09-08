@@ -71,7 +71,9 @@ namespace chess {
          */
         bool MakeLegalMove(const Move& move);
 
-        bool MakeLegalMoveLAN(const MoveLAN& move_lan);
+        bool MakeLegalMoveLAN(const MoveLAN& move_lan, Move& actual_move);
+
+        void UnmakeMove(const Move& move, const IrreversibleAspects& prev_aspects);
 
 
         [[nodiscard]] bool IsInCheck() const { return is_in_check_; }
@@ -132,7 +134,6 @@ namespace chess {
 
 
         void MakeMove(const Move& move);
-        void UnmakeMove(const Move& move, const IrreversibleAspects& prev_aspects);
 
         bool ComputeIsInCheck();
 

@@ -212,8 +212,8 @@ namespace chess {
                 }
             }
         }
-        std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({}/{}, w/b still on board)",
-            white_piece_coordinates_.size(), black_piece_coordinates_.size());
+        // std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({}/{}, w/b still on board)",
+        //     white_piece_coordinates_.size(), black_piece_coordinates_.size());
     }
 
     void Position::EnsureLegalEnPassantSquare() {
@@ -330,10 +330,12 @@ namespace chess {
         return true;
     }
 
-    bool Position::MakeLegalMoveLAN(const MoveLAN &move_lan) {
+    bool Position::MakeLegalMoveLAN(const MoveLAN &move_lan, Move& actual_move) {
         const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
         for (const Move& move : legal_moves) {
             if (move_lan.Matches(move)) {
+                std::println("MakeLEgalMove(): {} -> {}", move.from, move.to);
+                actual_move = move;
                 MakeMove(move);
                 return true;
             }
@@ -613,6 +615,8 @@ namespace chess {
         auto [from, to, double_pawn, en_passant, castle_kingside, castle_queenside, promotion_type, capture_type] = move;
         Piece moved_piece = GetPiece(from);
         Piece target_piece = GetPiece(to);
+        
+        std::println("[INFO] MakeMove(): Making move: {}: {} -> {}", moved_piece.ToChar(), from, to);
 
         assert(moved_piece.player == active_player_);
         assert( ( move.capture_type == target_piece.type ) || ( move.en_passant && target_piece.IsEmpty() ) );
@@ -727,7 +731,89 @@ namespace chess {
     }
 
     void Position::UnmakeMove(const Move &move, const IrreversibleAspects& prev_aspects) {
-        // TODO
+        auto [from, to, double_pawn, en_passant, castle_kingside, castle_queenside, promotion_type, capture_type] = move;
+
+        Player other_player = active_player_;
+        active_player_ = GetOtherPlayer(active_player_);
+
+        Piece moving_piece = GetPiece(to);
+        std::println("[INFO] UnmakeMove(): Unmaking move: {} -> {}, moving piece: {}, capture type: {}, promotion type: {}, en_passant: {}, double_pawn: {}, castle_kingside: {}, castle_queenside: {}",
+            from, to, moving_piece.ToChar(), std::to_underlying(capture_type), std::to_underlying(promotion_type), en_passant, double_pawn, castle_kingside, castle_queenside);
+        if (active_player_ == Player::White) {
+            std::println("[INFO] UnmakeMove(): active_player_ is White");
+        } else {
+            std::println("[INFO] UnmakeMove(): active_player_ is Black");
+        }
+        assert(moving_piece.player == active_player_);
+
+        SetPiece(from, moving_piece);
+        SetPiece(to, kEmptyPiece);
+
+        // may be empty piece.
+        Piece captured_piece = Piece{ .type = capture_type, .player = other_player};
+
+        if (en_passant) {
+            assert(capture_type == PieceType::Pawn);
+
+            // pawn taken en passant coords is on square after where we take.
+            Coordinates pawn_taken_en_passant_coords = to + GetPawnMoveDirection(other_player);
+            assert(pawn_taken_en_passant_coords.IsValid() && GetPiece(pawn_taken_en_passant_coords).type == PieceType::None);
+            SetPiece(pawn_taken_en_passant_coords, captured_piece);
+        } else if (capture_type != PieceType::None) {
+            SetPiece(to, captured_piece);
+        }
+
+        if (promotion_type != PieceType::None) {
+            assert(moving_piece.type == promotion_type);
+
+            // moved piece was a pawn before
+            moving_piece.type = PieceType::Pawn;
+            SetPiece(from, moving_piece);
+        }
+
+        if (castle_kingside) {
+
+            Coordinates king_square{};
+            Coordinates rook_square{};
+            Coordinates new_rook_square{};
+            if (active_player_ == Player::White) {
+                king_square = kWhiteKingSquare;
+                rook_square = kWhiteRookKingsideSquare;
+                new_rook_square = kWhiteBishopKingsideSquare;
+            } else {
+                king_square = kBlackKingSquare;
+                rook_square = kBlackRookKingsideSquare;
+                new_rook_square = kBlackBishopKingsideSquare;
+            }
+            Piece rook_piece = GetPiece(new_rook_square);
+            assert(from == king_square && rook_piece.type == PieceType::Rook);
+
+            SetPiece(rook_square, rook_piece);
+            SetPiece(new_rook_square, kEmptyPiece);
+            // king already moved
+        } else if (castle_queenside) {
+            Coordinates king_square{};
+            Coordinates rook_square{};
+            Coordinates new_rook_square{};
+            if (active_player_ == Player::White) {
+                king_square = kWhiteKingSquare;
+                rook_square = kWhiteRookQueensideSquare;
+                new_rook_square = kWhiteQueenSquare;
+            } else {
+                king_square = kBlackKingSquare;
+                rook_square = kBlackRookQueensideSquare;
+                new_rook_square = kBlackQueenSquare;
+            }
+            Piece rook_piece = GetPiece(new_rook_square);
+            assert(from == king_square && rook_piece.type == PieceType::Rook);
+
+            SetPiece(rook_square, rook_piece);
+            SetPiece(new_rook_square, kEmptyPiece);
+            // king already moved
+        }
+
+
+        irreversible_aspects_ = prev_aspects;
     }
 
 

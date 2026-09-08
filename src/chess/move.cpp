@@ -42,6 +42,7 @@ namespace chess {
         index += 2;
         if (check_promotion && lan_str.size() > index) {
             promotion_type = static_cast<PieceType>(lan_str[index++]);
+            //TODO fix
             return std::nullopt;
             // assert(utility::ranges::Contains(kPromotableTypes, promotion_type) && "Promoting to illegal piece type.");
         }

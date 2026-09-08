@@ -15,8 +15,8 @@
 namespace chess {
 
     struct Coordinates {
-        int row;
-        int column;
+        int row = 0;
+        int column = 0;
 
         bool operator==(const Coordinates&) const = default;
         Coordinates operator+(const Coordinates& rhs) const {
