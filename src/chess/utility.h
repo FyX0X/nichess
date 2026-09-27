@@ -12,7 +12,7 @@ namespace chess {
     int GetPieceStartingRank(Player player);
     Player GetOtherPlayer(Player player);
     bool CouldPlayerTakePiece(Player player, const Piece &piece);
-    constexpr Coordinates GetPawnMoveDirection(Player player);
+    Coordinates GetPawnMoveDirection(Player player);
 
 }
 

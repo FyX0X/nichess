@@ -31,8 +31,6 @@ namespace chess {
 
         [[nodiscard]] std::string ToString() const;
 
-        [[nodiscard]] std::string GetTargetedSquaresString(Player player) const; // TODO remove
-
         // getters
         [[nodiscard]] const std::array<std::array<Piece, 8>, 8>& GetBoard() const { return board_; }
 
@@ -52,16 +50,15 @@ namespace chess {
         [[nodiscard]] int GetMoveCount() const { return move_count_; }
 
 
-        /**
-         * Tries to perform a move (only if legal).
-         * @param move The legal move to play.
-         * @return True if the move was successfully played.
-         */
-        bool MakeLegalMove(const Move& move);
+        [[nodiscard]] std::vector<Coordinates> GetPlayerOccupiedSquares(const Player player) const {
+            return player == Player::White ? white_piece_coordinates_ : black_piece_coordinates_;
+        }
+
 
         // todo modify
         bool MakeLegalMoveLAN(const MoveLAN& move_lan, Move& actual_move);
 
+        void MakeMove(const Move& move);
         void UnmakeMove(const Move& move, const IrreversibleAspects& prev_aspects);
 
 
@@ -86,8 +83,6 @@ namespace chess {
 
 
 
-        void MakeMove(const Move& move);
-        void UnmakeMoveInternal(const Move& move, const IrreversibleAspects& prev_aspects);
 
 
         // each char represents a board cell.

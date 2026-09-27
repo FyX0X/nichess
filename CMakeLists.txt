@@ -28,7 +28,6 @@ add_executable(nichess src/main.cpp
         src/chess/engine.h
         src/chess/utility.cpp
         src/chess/utility.h
-        src/chess/utility.cpp
 )
 
 

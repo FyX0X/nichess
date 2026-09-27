@@ -45,7 +45,7 @@ namespace chess {
         return (piece.player == GetOtherPlayer(player) && piece.type != PieceType::King && piece.type != PieceType::None);
     }
 
-    static constexpr Coordinates GetPawnMoveDirection(const Player player) {
+    Coordinates GetPawnMoveDirection(const Player player) {
         switch (player) {
             case Player::White:
                 return kWhitePawnDirection;

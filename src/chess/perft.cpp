@@ -4,10 +4,13 @@
 
 #include "perft.h"
 
+#include <cassert>
+
 #include "move.h"
 
 #include <chrono>
 #include <print>
+#include "chess/engine.h"
 
 namespace chess {
 
@@ -43,14 +46,16 @@ namespace chess {
             return 1ULL;
         }
 
-        std::vector<Move> move_list = position_.GetActivePlayerMoves();
+        std::vector<Move> move_list = Engine::GetLegalMoves(position_);
         int n_moves = move_list.size();
         uint64_t nodes = 0;
 
         IrreversibleAspects irreversible_aspects = position_.GetIrreversibleAspects();
 
         for (int i = 0; i < n_moves; i++) {
-            if (!position_.MakeLegalMove(move_list[i])) {
+            position_.MakeMove(move_list[i]);
+            if (false) {
+                // TODO implement this
                 Move move = move_list[i];
                 std::println("[ERROR] PerftRecursive: move {}->{} is not legal", move.from, move.to);
                 continue;

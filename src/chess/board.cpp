@@ -65,6 +65,7 @@ namespace chess {
     }
 
 
+    /* todo move to engine or delete
     std::string Board::GetTargetedSquaresString(Player player) const {
         std::stringstream boardStream;
 
@@ -84,7 +85,7 @@ namespace chess {
         boardStream << "  -----------------\n";
         boardStream << "   a b c d e f g h \n";
         return boardStream.str();
-    }
+    }*/
 
 
     void Board::RecomputeRemainingPieces() {
@@ -179,28 +180,10 @@ namespace chess {
 
 #pragma region Moves
 
-    bool Board::MakeLegalMove(const Move &move) {
-
-        const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
-
-        if (!utility::ranges::Contains(legal_moves, move)) {
-            return false;
-        }
-        MakeMove(move);
-
-        return true;
-    }
 
     bool Board::MakeLegalMoveLAN(const MoveLAN &move_lan, Move& actual_move) {
-        const auto& legal_moves = GetLegalMovesForPlayer(active_player_);
-        for (const Move& move : legal_moves) {
-            if (move_lan.Matches(move)) {
-                std::println("MakeLEgalMove(): {} -> {}", move.from, move.to);
-                actual_move = move;
-                MakeMove(move);
-                return true;
-            }
-        }
+        // TODO
+        std::println("Board::MakeLegalMoveLan(): Not Yet Implemented");
         return false;
     }
 
@@ -329,7 +312,7 @@ namespace chess {
     }
 
 
-    void Board::UnmakeMoveInternal(const Move &move, const IrreversibleAspects& prev_aspects) {
+    void Board::UnmakeMove(const Move &move, const IrreversibleAspects& prev_aspects) {
         auto [from, to, double_pawn, en_passant, castle_kingside, castle_queenside, promotion_type, capture_type] = move;
 
         Player other_player = active_player_;

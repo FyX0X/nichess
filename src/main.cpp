@@ -5,20 +5,20 @@
 #include "notation/fen.h"
 #include "utility/ranges_utils.h"
 #include "chess/perft.h"
-
+#include "chess/engine.h"
 
 constexpr bool kDoPerft = true;
-constexpr bool kDoPlayGame = false;
+constexpr bool kDoPlayGame = true;
 
 
 static void GameInfo(const chess::Board& position) {
     std::println("Game Info: \n\n{}", position.ToString());
     std::println("Encoded FEN: {}", notation::fen::Encode(position));
-    const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
+    const std::vector<chess::Move>& moves =  chess::Engine::GetLegalMoves(position);
     std::println("move count= {}", moves.size());
 
-    std::println("{}", position.GetTargetedSquaresString(chess::Player::White));
-    std::println("{}", position.GetTargetedSquaresString(chess::Player::Black));
+    /*std::println("{}", position.GetTargetedSquaresString(chess::Player::White));
+    std::println("{}", position.GetTargetedSquaresString(chess::Player::Black));*/
 }
 
 static void GameInfoFEN(std::string_view fen) {
@@ -51,6 +51,7 @@ static void TestPerft() {
 }
 
 static void PlayGame() {
+
     chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
 
     chess::Move move(chess::Coordinates{}, chess::Coordinates{});
@@ -61,7 +62,7 @@ static void PlayGame() {
     std::println("{}", position.ToString());
     std::string input;
     while (true) {
-        const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
+        const std::vector<chess::Move>& moves = chess::Engine::GetLegalMoves(position);
         if (moves.empty()) {
             std::println("no more playable moves");
             break;
