@@ -47,7 +47,6 @@ namespace chess {
             return (player == Player::White) ? white_targets_ : black_targets_;
         }
 
-
         [[nodiscard]] const IrreversibleAspects& GetIrreversibleAspects() const { return irreversible_aspects_; }
         [[nodiscard]] const std::optional<Coordinates>& GetEnPassant() const { return irreversible_aspects_.en_passant; }
         [[nodiscard]] CastlingRights GetCastlingRights() const { return irreversible_aspects_.castling_rights; }
@@ -92,6 +91,8 @@ namespace chess {
 
         void EnsureLegalEnPassantSquare();
 
+        bool IsPositionCheckLegal() const;
+
         /** Limits the granted rights to what is possible with remaining pieces. */
         void EnsurePossibleCastlingRights();
 
@@ -109,31 +110,40 @@ namespace chess {
 
 
         void ComputeMovesForPlayer(Player player);
+        std::vector<Move> GenerateMovesForPlayer(Player player) const;
 
         void AddTargetedSquareToPlayer(Coordinates to, Player player);
 
         void AddMoveToPlayer(const Move &move, Player player);
 
-        void GenerateLegalMovesFromCoordinates(const Coordinates& from, Player player);
+        std::vector<Move> GeneratePseudoLegalMovesFromCoordinates(const Coordinates& from, Player player) const;
 
-        void GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player);
+        std::vector<Move> GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player) const;
 
-        void GeneratePromotionMoves(const Move &move, Player player);
+        static std::vector<Move> GeneratePromotionMoves(const Move &move, Player player) ;
 
-        void GenerateDirectMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player);
+        std::vector<Move> GenerateDirectMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player) const;
 
-        void GeneratePawnMoves(const Coordinates& from, Player player);
-        void GenerateKnightMoves(const Coordinates& from, Player player);
-        void GenerateBishopMoves(const Coordinates& from, Player player);
-        void GenerateRookMoves(const Coordinates& from, Player player);
-        void GenerateQueenMoves(const Coordinates& from, Player player);
-        void GenerateKingMoves(const Coordinates& from, Player player);
-        void GenerateCastleMoves(Player player);
+        std::vector<Move> GeneratePawnMoves(const Coordinates& from, Player player) const;
+        std::vector<Move> GenerateKnightMoves(const Coordinates& from, Player player) const;
+        std::vector<Move> GenerateBishopMoves(const Coordinates& from, Player player) const;
+        std::vector<Move> GenerateRookMoves(const Coordinates& from, Player player) const;
+        std::vector<Move> GenerateQueenMoves(const Coordinates& from, Player player) const;
+        std::vector<Move> GenerateKingMoves(const Coordinates& from, Player player) const;
+        std::vector<Move> GenerateCastleMoves(Player player) const;
 
         [[nodiscard]] bool DoesPlayerTargetCoordinates(Player player, Coordinates coordinates) const;
 
+        [[nodiscard]] bool& GetPlayerKingTargeted(Player player) {
+            return (player == Player::White) ? white_king_targeted_ : black_king_targeted_;
+        }
+        [[nodiscard]] bool GetPlayerKingTargeted(Player player) const{
+            return (player == Player::White) ? white_king_targeted_ : black_king_targeted_;
+        }
 
         void MakeMove(const Move& move);
+        void UnmakeMoveInternal(const Move& move, const IrreversibleAspects& prev_aspects);
+
 
         bool ComputeIsInCheck();
 
@@ -159,6 +169,10 @@ namespace chess {
         std::vector<Move> black_moves_ = {};
 
         bool is_in_check_ = false;
+
+
+        bool white_king_targeted_ = false;
+        bool black_king_targeted_ = false;
 
     };
 } // chess

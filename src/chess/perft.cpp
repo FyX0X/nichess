@@ -11,10 +11,13 @@
 
 namespace chess {
 
+
+    static int move_count = 0;
+
     uint64_t Perft::PerftAtDepth(int depth) {
         
         position_ = starting_position_;
-
+        move_count = 0;
         return PerftRecursive(depth);
     }
 
@@ -32,26 +35,31 @@ namespace chess {
 
     uint64_t Perft::PerftRecursive(int depth)
     {
-    if (depth == 0) 
-        return 1ULL;
+        if (depth == 0) {
+            move_count++;
+            if ((move_count & (move_count-1)) == 0) {
+                std::println("[INFO] Perft: Generated {} moves...", move_count);
+            }
+            return 1ULL;
+        }
 
-    
-    std::vector<Move> move_list = position_.GetActivePlayerMoves();
-    int n_moves = move_list.size();
-    uint64_t nodes = 0;
-    
-    IrreversibleAspects irreversible_aspects = position_.GetIrreversibleAspects();
+        std::vector<Move> move_list = position_.GetActivePlayerMoves();
+        int n_moves = move_list.size();
+        uint64_t nodes = 0;
 
-    for (int i = 0; i < n_moves; i++) {
-        if (!position_.MakeLegalMove(move_list[i])) {
-            Move move = move_list[i];
-            std::println("[ERROR] PerftRecursive: move {}->{} is not legal", move.from, move.to);
-            continue;
-        };
-        nodes += PerftRecursive(depth - 1);
-        position_.UnmakeMove(move_list[i], irreversible_aspects);
-    }
-    return nodes;
+        IrreversibleAspects irreversible_aspects = position_.GetIrreversibleAspects();
+
+        for (int i = 0; i < n_moves; i++) {
+            if (!position_.MakeLegalMove(move_list[i])) {
+                Move move = move_list[i];
+                std::println("[ERROR] PerftRecursive: move {}->{} is not legal", move.from, move.to);
+                continue;
+            };
+            nodes += PerftRecursive(depth - 1);
+            position_.UnmakeMove(move_list[i], irreversible_aspects);
+        }
+
+        return nodes;
     }
 
 } // namespace chess

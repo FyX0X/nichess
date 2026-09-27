@@ -12,6 +12,12 @@
 
 namespace chess {
 
+    std::string Move::ToString() const {
+        char capture_char = capture_type != PieceType::None ? 'x' : '-';
+        std::string promotion_char = (promotion_type == PieceType::None) ? "" : std::format("{}", std::to_underlying(promotion_type));
+        return std::format("{}{}{}{}", from, capture_char, to, promotion_char);
+    }
+
     bool MoveLAN::Matches(const Move &move) const {
         return move.from == from && move.to == to && (move.capture_type != PieceType::None) == capture && move.promotion_type == promotion_type;
     }

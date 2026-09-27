@@ -122,7 +122,7 @@ namespace chess {
         EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
         ComputeMovesForPlayer(Player::White);
-        ComputeMovesForPlayer(Player::Black);
+        // ComputeMovesForPlayer(Player::Black);
 
     }
 
@@ -139,9 +139,9 @@ namespace chess {
         EnsureLegalEnPassantSquare();
         EnsurePossibleCastlingRights();
         RecomputeRemainingPieces();
-        ComputeMovesForPlayer(Player::White);
-        ComputeMovesForPlayer(Player::Black);
-        ComputeMovesForPlayer(Player::White); // recompute with updated info // todo change this
+        ComputeMovesForPlayer(active_player);
+        // ComputeMovesForPlayer(Player::Black);
+        // ComputeMovesForPlayer(Player::White); // recompute with updated info // todo change this
     }
 
     std::string Position::ToString() const {
@@ -214,6 +214,32 @@ namespace chess {
         }
         // std::println("[INFO] RecomputeRemainingPieces(): All pieces recomputed. ({}/{}, w/b still on board)",
         //     white_piece_coordinates_.size(), black_piece_coordinates_.size());
+    }
+
+    bool Position::IsPositionCheckLegal() const {
+
+
+        Player other = GetOtherPlayer(active_player_);
+        Coordinates target = {-1, -1};
+
+        for (Coordinates coordinates : GetPlayerOccupiedSquares(other)) {
+            if (GetPiece(coordinates).type == PieceType::King) {
+                target = coordinates;
+                break;
+            }
+        }
+
+        assert(target.IsValid());
+
+        for (const Move& move : GenerateMovesForPlayer(other)) {
+            if (move.to == target) {
+                return false;
+            }
+        }
+
+        return true;
+
+
     }
 
     void Position::EnsureLegalEnPassantSquare() {
@@ -327,6 +353,8 @@ namespace chess {
             return false;
         }
         MakeMove(move);
+
+        ComputeMovesForPlayer(active_player_);
         return true;
     }
 
@@ -337,6 +365,7 @@ namespace chess {
                 std::println("MakeLEgalMove(): {} -> {}", move.from, move.to);
                 actual_move = move;
                 MakeMove(move);
+                ComputeMovesForPlayer(active_player_);
                 return true;
             }
         }
@@ -344,18 +373,28 @@ namespace chess {
     }
 
 
+    std::vector<Move> Position::GenerateMovesForPlayer(Player player) const {
+        std::vector<Move> moves;
+
+
+        for (const Coordinates& coord : GetPlayerOccupiedSquares(player)) {
+            assert(GetPiece(coord).player == player);
+            moves.append_range(GeneratePseudoLegalMovesFromCoordinates(coord, player));
+        }
+        moves.append_range(GenerateCastleMoves(player));
+        return moves;
+    }
+
     void Position::ComputeMovesForPlayer(Player player) {
+
+        GetPlayerKingTargeted(GetOtherPlayer(player)) = false;
 
         GetLegalMovesForPlayer(player).clear();
         GetPlayerTargetedSquares(player).fill(std::array<bool, 8>{false});
 
-        for (const Coordinates& coord : GetPlayerOccupiedSquares(player)) {
-            assert(GetPiece(coord).player == player);
-            GenerateLegalMovesFromCoordinates(coord, player);
+        for (const Move& move : GenerateMovesForPlayer(player)) {
+            AddMoveToPlayer(move, player);
         }
-        GenerateCastleMoves(player);
-
-
     }
 
     void Position::AddTargetedSquareToPlayer(const Coordinates to, Player player) {
@@ -364,15 +403,27 @@ namespace chess {
 
     // TODO consider changing args to P, std::vector<Move>& player_moves, std::array<std::array<bool, 8>, 8>& player_reachable instead of just Player player
     void Position::AddMoveToPlayer(const Move& move, const Player player) {
-        GetLegalMovesForPlayer(player).push_back(move);
+        assert(player == active_player_);
+        // make move
+        IrreversibleAspects irreversible_aspects = GetIrreversibleAspects();
+        MakeMove(move);
+        // check legal
+        if (IsPositionCheckLegal()) {
+            // add move
+            // std::println("info: successfully added a move");
+            GetLegalMovesForPlayer(player).push_back(move);
+            GetPlayerTargetedSquares(player)[move.to.row][move.to.column] = true;
+        }
+        // unmake move
+        UnmakeMoveInternal(move, irreversible_aspects);
     }
 
 
-    void Position::GenerateLegalMovesFromCoordinates(const Coordinates& from, Player player) {
+    std::vector<Move> Position::GeneratePseudoLegalMovesFromCoordinates(const Coordinates &from, Player player) const {
 
         Piece piece = GetPiece(from);
         assert(!piece.IsEmpty() && piece.player == player && "Invalid player or piece.");
-
+        std::vector<Move> moves;
         switch (piece.type) {
             case PieceType::Pawn:
                 // std::println("PAWN MOVES:");
@@ -393,51 +444,59 @@ namespace chess {
                 // std::println("KING MOVES:");
                 return GenerateKingMoves(from, player);
             default:
-                std::println(stderr, "[ERROR] Position::GenerateLegalMovesForPlayer(): Unrecognized piece type, {}", std::to_underlying(piece.type));
-                return;
+                std::println(stderr, "[ERROR] Position::GeneratePseudoLegalMovesForPlayer(): Unrecognized piece type, {}", std::to_underlying(piece.type));
+                return std::vector<Move>{};
         }
     }
 
-    void Position::GenerateDirectMoves(const Coordinates &from, const std::vector<Coordinates> &directions, Player player) {
+    std::vector<Move> Position::GenerateDirectMoves(const Coordinates &from, const std::vector<Coordinates> &directions,
+                                                    Player player) const {
         assert(GetPiece(from).player == player);
+
+        std::vector<Move> moves;
+
         int count = 0;
         for (const Coordinates& dir : directions) {
             Coordinates to = from + dir;
             if (!to.IsValid()) {
                 continue;
             }
-            AddTargetedSquareToPlayer(to, player);
+            // AddTargetedSquareToPlayer(to, player);
             Piece piece = GetPiece(to);
             if (piece.IsEmpty() || CouldPlayerTakePiece(player, piece)) {
                 Move move(from, to);
                 move.capture_type = piece.type;
-                AddMoveToPlayer(move, player);
+                moves.push_back(move);
                 count++;
             }
         }
         // std::println("Added '{}' moves from {}", count, from);
+        return moves;
     }
 
-    void Position::GenerateTranslationMoves(const Coordinates& from, const std::vector<Coordinates>& directions, Player player) {
+    std::vector<Move> Position::GenerateTranslationMoves(const Coordinates &from,
+                                                         const std::vector<Coordinates> &directions, Player player) const {
 
         assert(GetPiece(from).player == player);
+
+        std::vector<Move> moves;
 
         int count = 0;
         // go in all directions
         for (const Coordinates& dir : directions) {
             for (Coordinates to = from + dir; to.IsValid(); to += dir ) {
-                AddTargetedSquareToPlayer(to, player);
+                // AddTargetedSquareToPlayer(to, player);
                 Piece piece = GetPiece(to);
                 if (piece.IsEmpty()) {
                     Move move(from, to);
-                    AddMoveToPlayer(move, player);
+                    moves.push_back(move);
                     count++;
                     continue;
                 }
                 if (CouldPlayerTakePiece(player, piece)) {
                     Move move(from, to);
                     move.capture_type = piece.type;
-                    AddMoveToPlayer(move, player);
+                    moves.push_back(move);
                     count++;
                 }
                 break;
@@ -445,26 +504,33 @@ namespace chess {
         }
 
         // std::println("Added '{}' moves from {}", count, from);
+        return moves;
     }
 
 
-    void Position::GeneratePromotionMoves(const Move& move, Player player) {
+    std::vector<Move> Position::GeneratePromotionMoves(const Move &move, Player player) {
         assert(move.to.row == GetPieceStartingRank(GetOtherPlayer(player)));
         assert(!move.en_passant);
         assert(!move.double_pawn);
+
+        std::vector<Move> moves;
         Move promotion = move;
         for (const PieceType promoted_type : kPromotableTypes) {
             promotion.promotion_type = promoted_type;
-            AddMoveToPlayer(promotion, player);
+            moves.push_back(promotion);
         }
         if (move.capture_type != PieceType::None) {
-            AddTargetedSquareToPlayer(move.to, player);
+            // AddTargetedSquareToPlayer(move.to, player);
         }
+        return moves;
     }
 
-    void Position::GeneratePawnMoves(const Coordinates& from, Player player) {
+    std::vector<Move> Position::GeneratePawnMoves(const Coordinates &from, Player player) const {
 
         assert(GetPiece(from).player == player);
+
+        std::vector<Move> moves;
+
         int count = 0;
         // moving straight
         int dy = (player == Player::White) ? 1 : -1;
@@ -477,10 +543,10 @@ namespace chess {
         if (to.IsValid() && GetPiece(to).IsEmpty()) {
             Move move(from, to);
             if (promotion) {
-                GeneratePromotionMoves(move, player);
+                moves.append_range(GeneratePromotionMoves(move, player));
                 count += kPromotableTypes.size();
             } else {
-                AddMoveToPlayer(move, player);
+                moves.push_back(move);
                 count++;
             }
 
@@ -490,62 +556,67 @@ namespace chess {
                 if (to.IsValid() && GetPiece(to).IsEmpty()) {
                     move = Move(from, to);
                     move.double_pawn = true;
-                    AddMoveToPlayer(move, player);
+                    moves.push_back(move);
                     count++;
                 }
             }
         }
 
         // Taking pieces diagonally
-        std::optional<Coordinates>& en_passant = GetEnPassant();
+        const std::optional<Coordinates>& en_passant = GetEnPassant();
         std::vector<Coordinates> take_directions = { {.row = dy, .column = -1}, {.row = dy, .column = 1}};
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
+            if (!to.IsValid()) {
+                break;
+            }
             bool is_en_passant = en_passant.has_value() && en_passant.value() == to;
             Piece target_piece = GetPiece(to);
-            if (to.IsValid() && CouldPlayerTakePiece(player, target_piece) || is_en_passant) {
+            if (CouldPlayerTakePiece(player, target_piece) || is_en_passant) {
                 Move move(from, to);
                 move.en_passant = is_en_passant;
                 move.capture_type = is_en_passant ? PieceType::Pawn : target_piece.type;
 
                 if (promotion) {
-                    GeneratePromotionMoves(move, player);
+                    moves.append_range(GeneratePromotionMoves(move, player));
                     count += kPromotableTypes.size();
                 } else {
-                    AddMoveToPlayer(move, player);
-                    AddTargetedSquareToPlayer(to, player);
+                    moves.push_back(move);
+                    // AddTargetedSquareToPlayer(to, player);
                     count++;
                 }
             }
         }
-
         // std::println("Added '{}' moves from {}", count, from);
+        return moves;
     }
 
-    void Position::GenerateKnightMoves(const Coordinates& from, Player player) {
-        GenerateDirectMoves(from, kKnightDirections, player);
+    std::vector<Move> Position::GenerateKnightMoves(const Coordinates& from, Player player) const {
+        return GenerateDirectMoves(from, kKnightDirections, player);
     }
 
-    void Position::GenerateBishopMoves(const Coordinates& from, Player player) {
-        GenerateTranslationMoves(from, kDiagonalDirections, player);
+    std::vector<Move> Position::GenerateBishopMoves(const Coordinates& from, Player player) const {
+        return GenerateTranslationMoves(from, kDiagonalDirections, player);
     }
 
-    void Position::GenerateRookMoves(const Coordinates& from, Player player) {
-        GenerateTranslationMoves(from, kOrthogonalDirections, player);
+    std::vector<Move> Position::GenerateRookMoves(const Coordinates& from, Player player) const {
+        return GenerateTranslationMoves(from, kOrthogonalDirections, player);
     }
 
-    void Position::GenerateQueenMoves(const Coordinates& from, Player player) {
-        GenerateTranslationMoves(from, kAllDirections, player);
+    std::vector<Move> Position::GenerateQueenMoves(const Coordinates& from, Player player) const {
+        return GenerateTranslationMoves(from, kAllDirections, player);
     }
 
-    void Position::GenerateKingMoves(const Coordinates& from, Player player) {
-        GenerateDirectMoves(from, kAllDirections, player);
+    std::vector<Move> Position::GenerateKingMoves(const Coordinates& from, Player player) const {
+        return GenerateDirectMoves(from, kAllDirections, player);
     }
 
-    void Position::GenerateCastleMoves(const Player player) {
+    std::vector<Move> Position::GenerateCastleMoves(const Player player) const {
         // TODO handle castle moves correctly when implementing move function.
 
-        CastlingRights& castling_rights = GetCastlingRights();
+        std::vector<Move> moves;
+
+        const CastlingRights& castling_rights = GetCastlingRights();
 
         Coordinates from = { .row = GetPieceStartingRank(player), .column = 4 };
 
@@ -571,8 +642,8 @@ namespace chess {
             if (castle_available) {
                 Move move(from, {.row = from.row, .column = from.column + 2});
                 move.castle_kingside = true;
-                AddMoveToPlayer(move, player);
-                std::println("Add kingside castle for player: {}", PlayerToString(player));
+                moves.push_back(move);
+                // std::println("Add kingside castle for player: {}", PlayerToString(player));
             }
         }
         // TODO try to remove duplicate code for kingside / queenside
@@ -593,10 +664,12 @@ namespace chess {
             if (castle_available) {
                 Move move(from, {.row = from.row, .column = from.column - 2});
                 move.castle_queenside = true;
-                AddMoveToPlayer(move, player);
-                std::println("Add queenside castle for player: {}", PlayerToString(player));
+                moves.push_back(move);
+                // std::println("Add queenside castle for player: {}", PlayerToString(player));
             }
         }
+
+        return moves;
     }
 
     bool Position::DoesPlayerTargetCoordinates(const Player player, const Coordinates coordinates) const {
@@ -615,8 +688,9 @@ namespace chess {
         auto [from, to, double_pawn, en_passant, castle_kingside, castle_queenside, promotion_type, capture_type] = move;
         Piece moved_piece = GetPiece(from);
         Piece target_piece = GetPiece(to);
-        
-        std::println("[INFO] MakeMove(): Making move: {}: {} -> {}", moved_piece.ToChar(), from, to);
+
+        // std::println("[INFO] MakeMove(): Making move: {}: {} -> {}", moved_piece.ToChar(), from, to);
+
 
         assert(moved_piece.player == active_player_);
         assert( ( move.capture_type == target_piece.type ) || ( move.en_passant && target_piece.IsEmpty() ) );
@@ -726,24 +800,35 @@ namespace chess {
         active_player_ = GetOtherPlayer(active_player_);
 
         RecomputeRemainingPieces();
-        ComputeMovesForPlayer(Player::White);
-        ComputeMovesForPlayer(Player::Black);
+        // DO not do this here, instead outside of this function
+        /*ComputeMovesForPlayer(Player::White);
+        ComputeMovesForPlayer(Player::Black);*/
     }
 
+
     void Position::UnmakeMove(const Move &move, const IrreversibleAspects& prev_aspects) {
+
+        UnmakeMoveInternal(move, prev_aspects);
+
+        RecomputeRemainingPieces();
+        ComputeMovesForPlayer(active_player_);
+
+    }
+
+    void Position::UnmakeMoveInternal(const Move &move, const IrreversibleAspects& prev_aspects) {
         auto [from, to, double_pawn, en_passant, castle_kingside, castle_queenside, promotion_type, capture_type] = move;
 
         Player other_player = active_player_;
         active_player_ = GetOtherPlayer(active_player_);
 
         Piece moving_piece = GetPiece(to);
-        std::println("[INFO] UnmakeMove(): Unmaking move: {} -> {}, moving piece: {}, capture type: {}, promotion type: {}, en_passant: {}, double_pawn: {}, castle_kingside: {}, castle_queenside: {}",
+        /*std::println("[INFO] UnmakeMove(): Unmaking move: {} -> {}, moving piece: {}, capture type: {}, promotion type: {}, en_passant: {}, double_pawn: {}, castle_kingside: {}, castle_queenside: {}",
             from, to, moving_piece.ToChar(), std::to_underlying(capture_type), std::to_underlying(promotion_type), en_passant, double_pawn, castle_kingside, castle_queenside);
         if (active_player_ == Player::White) {
             std::println("[INFO] UnmakeMove(): active_player_ is White");
         } else {
             std::println("[INFO] UnmakeMove(): active_player_ is Black");
-        }
+        }*/
         assert(moving_piece.player == active_player_);
 
         SetPiece(from, moving_piece);
@@ -814,10 +899,16 @@ namespace chess {
 
 
         irreversible_aspects_ = prev_aspects;
+
+
+        RecomputeRemainingPieces();
+        // ComputeMovesForPlayer(Player::White);
+        // ComputeMovesForPlayer(Player::Black);
     }
 
 
 
+    // TODO REMOVE THIS
     bool Position::ComputeIsInCheck() {
 
         Player other = GetOtherPlayer(active_player_);

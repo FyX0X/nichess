@@ -47,7 +47,7 @@ static void TestCoordinatesConvertion() {
 static void TestPerft() {
     chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(1);
+    perft.PerformPerftAndPrintInfo(2);
 }
 
 static void PlayGame() {
@@ -85,6 +85,12 @@ static void PlayGame() {
 
             std::println("Undoing move...\n{}", position.ToString());
             continue;
+        }
+        if (lower_case == "list") {
+            std::println("Displaying all moves:");
+            for (const chess::Move& available_move : moves) {
+                std::println("{}", available_move.ToString());
+            }
         }
 
         std::optional<chess::MoveLAN> move_lan = chess::MoveLAN::FromLongAlgebraicNotation(input);
