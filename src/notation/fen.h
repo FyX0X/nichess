@@ -7,14 +7,14 @@
 
 #include <optional>
 #include <string>
-#include "chess/position.h"
+#include "chess/board.h"
 
 namespace notation::fen {
 
     constexpr std::string_view kDefaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    std::string Encode(const chess::Position& position);
-    std::optional<chess::Position> Decode(std::string_view fen);
+    std::string Encode(const chess::Board& position);
+    std::optional<chess::Board> Decode(std::string_view fen);
 
 } // notation::FEN
 

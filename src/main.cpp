@@ -1,7 +1,7 @@
 #include <iostream>
 #include <print>
 
-#include "chess/position.h"
+#include "chess/board.h"
 #include "notation/fen.h"
 #include "utility/ranges_utils.h"
 #include "chess/perft.h"
@@ -11,7 +11,7 @@ constexpr bool kDoPerft = true;
 constexpr bool kDoPlayGame = false;
 
 
-static void GameInfo(const chess::Position& position) {
+static void GameInfo(const chess::Board& position) {
     std::println("Game Info: \n\n{}", position.ToString());
     std::println("Encoded FEN: {}", notation::fen::Encode(position));
     const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
@@ -45,13 +45,13 @@ static void TestCoordinatesConvertion() {
 }
 
 static void TestPerft() {
-    chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
+    chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
     perft.PerformPerftAndPrintInfo(2);
 }
 
 static void PlayGame() {
-    chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
+    chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
 
     chess::Move move(chess::Coordinates{}, chess::Coordinates{});
     std::vector<chess::Move> played_moves;
