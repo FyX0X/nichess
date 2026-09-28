@@ -8,7 +8,7 @@
 #include "chess/engine.h"
 
 constexpr bool kDoPerft = true;
-constexpr bool kDoPlayGame = true;
+constexpr bool kDoPlayGame = false;
 
 
 static void GameInfo(const chess::Board& position) {
@@ -47,14 +47,14 @@ static void TestCoordinatesConvertion() {
 static void TestPerft() {
     chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(2);
+    perft.PerformPerftAndPrintInfo(5);
 }
 
 static void PlayGame() {
 
     chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
 
-    chess::Move move(chess::Coordinates{}, chess::Coordinates{});
+    // chess::Move move(chess::Coordinates{}, chess::Coordinates{});
     std::vector<chess::Move> played_moves;
     std::vector<chess::IrreversibleAspects> irreversible_stack;
     irreversible_stack.push_back(position.GetIrreversibleAspects());
@@ -99,10 +99,14 @@ static void PlayGame() {
             std::println("Unrecognized lan format: {}\t\t('q' to quit)", input);
             continue;
         }
-        if ( !position.MakeLegalMoveLAN(move_lan.value(), move)) {
+        std::optional<chess::Move> corresponding_move = move_lan.value().GetCorrespondingMove(moves);
+
+        if (!corresponding_move.has_value()) {
             std::println("Illegal move: {}", move_lan.value().ToLongAlgebraicNotation());
             continue;
         }
+        chess::Move move = corresponding_move.value();
+        position.MakeMove(move);
         std::println("main(): move: {} -> {}", move.from, move.to);
         played_moves.push_back(move);
         irreversible_stack.push_back(position.GetIrreversibleAspects());

@@ -181,13 +181,6 @@ namespace chess {
 #pragma region Moves
 
 
-    bool Board::MakeLegalMoveLAN(const MoveLAN &move_lan, Move& actual_move) {
-        // TODO
-        std::println("Board::MakeLegalMoveLan(): Not Yet Implemented");
-        return false;
-    }
-
-
     void Board::MakeMove(const Move &move) {
         // TODO
         IrreversibleAspects new_aspects = GetIrreversibleAspects();

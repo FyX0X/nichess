@@ -54,10 +54,6 @@ namespace chess {
             return player == Player::White ? white_piece_coordinates_ : black_piece_coordinates_;
         }
 
-
-        // todo modify
-        bool MakeLegalMoveLAN(const MoveLAN& move_lan, Move& actual_move);
-
         void MakeMove(const Move& move);
         void UnmakeMove(const Move& move, const IrreversibleAspects& prev_aspects);
 
