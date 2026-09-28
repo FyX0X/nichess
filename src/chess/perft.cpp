@@ -10,6 +10,8 @@
 
 #include <chrono>
 #include <print>
+
+#include "utility.h"
 #include "chess/engine.h"
 
 namespace chess {
@@ -46,7 +48,7 @@ namespace chess {
             return 1ULL;
         }
 
-        std::vector<Move> move_list = Engine::GetLegalMoves(position_);
+        std::vector<Move> move_list = Engine::GetPseudoLegalMoves(position_);
         int n_moves = move_list.size();
         uint64_t nodes = 0;
 
@@ -54,13 +56,12 @@ namespace chess {
 
         for (int i = 0; i < n_moves; i++) {
             position_.MakeMove(move_list[i]);
-            if (false) {
-                // TODO implement this
+            if (!Engine::IsPlayerInCheck(position_, GetOtherPlayer(position_.GetActivePlayer()))) {
+                nodes += PerftRecursive(depth - 1);
+            } else {
                 Move move = move_list[i];
-                std::println("[ERROR] PerftRecursive: move {}->{} is not legal", move.from, move.to);
-                continue;
-            };
-            nodes += PerftRecursive(depth - 1);
+                std::println("[Info] PerftRecursive: move {}->{} is not legal", move.from, move.to);
+            }
             position_.UnmakeMove(move_list[i], irreversible_aspects);
         }
 

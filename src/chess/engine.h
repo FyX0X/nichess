@@ -12,8 +12,15 @@ namespace chess {
 
     public:
 
-        static std::vector<Move> GetLegalMoves(const Board& board);
+        static std::vector<Move> GetPseudoLegalMoves(const Board& board);
+        static std::vector<Move> GetLegalMoves(const Board& board); // TODO
 
+
+
+        static bool IsPlayerInCheck(const Board& board, const Player& player);
+
+        /* Returns if the player controls this square, by convention: a piece does not control it's own square. */
+        static bool DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& target);
     private:
 
 
@@ -30,10 +37,6 @@ namespace chess {
         static std::vector<Move> GenerateCastleMoves(const Board& board, Player player);
 
 
-        static bool IsPlayerInCheck(const Board& board, const Player& player);
-
-        /* Returns if the player controls this square, by convention: a piece does not control it's own square. */
-        static bool DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& target);
         static bool CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
         static bool CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
         static bool CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);

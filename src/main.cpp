@@ -14,7 +14,7 @@ constexpr bool kDoPlayGame = false;
 static void GameInfo(const chess::Board& position) {
     std::println("Game Info: \n\n{}", position.ToString());
     std::println("Encoded FEN: {}", notation::fen::Encode(position));
-    const std::vector<chess::Move>& moves =  chess::Engine::GetLegalMoves(position);
+    const std::vector<chess::Move>& moves =  chess::Engine::GetPseudoLegalMoves(position);
     std::println("move count= {}", moves.size());
 
     /*std::println("{}", position.GetTargetedSquaresString(chess::Player::White));
@@ -47,7 +47,7 @@ static void TestCoordinatesConvertion() {
 static void TestPerft() {
     chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(5);
+    perft.PerformPerftAndPrintInfo(4);
 }
 
 static void PlayGame() {
@@ -62,7 +62,7 @@ static void PlayGame() {
     std::println("{}", position.ToString());
     std::string input;
     while (true) {
-        const std::vector<chess::Move>& moves = chess::Engine::GetLegalMoves(position);
+        const std::vector<chess::Move>& moves = chess::Engine::GetPseudoLegalMoves(position);
         if (moves.empty()) {
             std::println("no more playable moves");
             break;

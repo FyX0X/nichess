@@ -221,7 +221,7 @@ namespace chess {
 #pragma region Move Generation
 
 
-    std::vector<Move> Engine::GetLegalMoves(const Board& board) {
+    std::vector<Move> Engine::GetPseudoLegalMoves(const Board& board) {
         std::vector<Move> moves;
 
         const Player player = board.GetActivePlayer();
