@@ -52,6 +52,7 @@ namespace chess {
 #pragma endregion
 
 
+#pragma region CheckingTargets
 
     bool Engine::IsPlayerInCheck(const Board &board, const Player &player) {
 
@@ -111,6 +112,32 @@ namespace chess {
 
         return false;
     }
+
+
+
+    bool Engine::CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+
+    }
+    bool Engine::CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+
+    }
+    bool Engine::CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+
+    }
+    bool Engine::CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+
+    }
+    bool Engine::CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+
+    }
+
+    bool Engine::CanKingTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+        Coordinates diff = target - from;
+
+        return abs(diff.row) <= 1 && abs(diff.column) <= 1;
+    }
+
+#pragma endregion
 
 
 #pragma region Move Generation
