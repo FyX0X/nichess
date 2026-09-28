@@ -119,7 +119,12 @@ namespace chess {
 
     }
     bool Engine::CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+        const Coordinates diff = target - from;
 
+        const int dy = abs(diff.row);
+        const int dx = abs(diff.column);
+
+        return std::max(dy, dx) == 2 && std::min(dy, dx) == 1;
     }
     bool Engine::CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
 
