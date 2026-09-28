@@ -31,6 +31,8 @@ namespace chess {
 
 
         static bool IsPlayerInCheck(const Board& board, const Player& player);
+
+        /* Returns if the player controls this square, by convention: a piece does not control it's own square. */
         static bool DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& target);
         static bool CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
         static bool CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);

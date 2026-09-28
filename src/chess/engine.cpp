@@ -141,6 +141,37 @@ namespace chess {
 
     bool Engine::CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
 
+        bool same_column = target.column == from.column;
+        bool same_row = target.row == from.row;
+
+        if (same_column == same_row) { // either both false (cannot target) or both true (cannot protect own square).
+            return  false;
+        }
+
+        Coordinates direction;
+
+        if (same_column) {
+            const int dy = target.row > from.row ? 1 : -1;
+            direction = {.row = dy, .column = 0};
+        } else {
+            const int dx = target.column > from.column ? 1 : -1;
+            direction = {.row = 0, .column = dx};
+        }
+
+        Coordinates square = from + direction;
+        while (square.IsValid()) {
+
+            if (square == target) {
+                return true;
+            }
+
+            if (!board.GetPiece(square).IsEmpty()) {
+                break;
+            }
+
+            square += direction;
+        }
+        return false;
     }
 
     bool Engine::CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
