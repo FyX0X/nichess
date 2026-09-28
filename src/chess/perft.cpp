@@ -17,12 +17,22 @@
 namespace chess {
 
 
-    static int move_count = 0;
+    static int nodes_count = 0;
+    static int en_passant_count = 0;
+    static int castle_count = 0;
+    static int promotion_count = 0;
+    static int check_count = 0;
+    static int capture_count = 0;
 
     uint64_t Perft::PerftAtDepth(int depth) {
         
         position_ = starting_position_;
-        move_count = 0;
+        nodes_count = 0;
+        en_passant_count = 0;
+        castle_count = 0;
+        promotion_count = 0;
+        check_count = 0;
+        capture_count = 0;
         return PerftRecursive(depth);
     }
 
@@ -36,14 +46,17 @@ namespace chess {
         std::print("Perft completed:\nNodes:\t{}\nTime taken:\t{:.6f} seconds.\nNodes per second:\t{:.2f}\n", nodes,
                    elapsed_time.count(), static_cast<double>(nodes) / elapsed_time.count());
 
+        std::println("Perft Statistics:\nEn Passant\t{}\nCastles \t{}\nPromotions\t{}\nchecks\t{}\ncaptures:\t{}",
+            en_passant_count, castle_count, promotion_count, check_count, capture_count);
+
     }
 
     uint64_t Perft::PerftRecursive(int depth)
     {
         if (depth == 0) {
-            move_count++;
-            if ((move_count & (move_count-1)) == 0) {
-                std::println("[INFO] Perft: Generated {} moves...", move_count);
+            nodes_count++;
+            if ((nodes_count & (nodes_count-1)) == 0) {
+                std::println("[INFO] Perft: Generated {} moves...", nodes_count);
             }
             return 1ULL;
         }
@@ -55,11 +68,18 @@ namespace chess {
         IrreversibleAspects irreversible_aspects = position_.GetIrreversibleAspects();
 
         for (int i = 0; i < n_moves; i++) {
-            position_.MakeMove(move_list[i]);
-            if (!Engine::IsPlayerInCheck(position_, GetOtherPlayer(position_.GetActivePlayer()))) {
+            Move move = move_list[i];
+            position_.MakeMove(move);
+            Player player = position_.GetActivePlayer();
+            if (!Engine::IsPlayerInCheck(position_, GetOtherPlayer(player))) {
                 nodes += PerftRecursive(depth - 1);
+                capture_count += (move.capture_type != PieceType::None) ? 1 : 0;
+                en_passant_count += (move.en_passant) ? 1 : 0;
+                castle_count += (move.castle_kingside || move.castle_queenside) ? 1 : 0;
+                promotion_count += (move.promotion_type != PieceType::None) ? 1 : 0;
+                check_count += (Engine::IsPlayerInCheck(position_, player)) ? 1 : 0;
+
             } else {
-                Move move = move_list[i];
                 std::println("[Info] PerftRecursive: move {}->{} is not legal", move.from, move.to);
             }
             position_.UnmakeMove(move_list[i], irreversible_aspects);

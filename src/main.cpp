@@ -47,7 +47,7 @@ static void TestCoordinatesConvertion() {
 static void TestPerft() {
     chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(4);
+    perft.PerformPerftAndPrintInfo(3);
 }
 
 static void PlayGame() {
@@ -142,6 +142,11 @@ int main() {
     std::println("check en passant");
     GameInfoFEN("k7/8/8/2pPPpP1/8/8/8/K7 w - f6 0 1");*/
 
+
+
+    chess::Board position = notation::fen::Decode("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1").value();
+    chess::Perft perft(position);
+    perft.PerformPerftAndPrintInfo(2);
 
     if (kDoPerft) {
         TestPerft();
