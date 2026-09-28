@@ -60,7 +60,18 @@ namespace chess {
 
     // TODO
     bool Engine::IsPlayerInCheck(const Board &board, const Player &player) {
-        return false;
+
+        Coordinates king_coordinates = {.row = -1, .column = -1};
+
+        for (const Coordinates& coordinates : board.GetPlayerOccupiedSquares(player)) {
+            if (board.GetPiece(coordinates).type == PieceType::King) {
+                assert(board.GetPiece(coordinates).player == player); // should be always true if not there is a sync error with GetPlayerOccupiedSquares()
+                king_coordinates = coordinates;
+            }
+        }
+        assert(king_coordinates.IsValid() && "Player should always have a king!");
+
+        return DoesPlayerTargetSquare(board, GetOtherPlayer(player), king_coordinates);
     }
 
 

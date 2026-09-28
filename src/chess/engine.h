@@ -32,12 +32,12 @@ namespace chess {
 
         static bool IsPlayerInCheck(const Board& board, const Player& player);
         static bool DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& coordinates);
-        static std::vector<Move> CanPawnTargetSquare(const Board& board, const Coordinates& from, Player player);
-        static std::vector<Move> CanKnightTargetSquare(const Board& board, const Coordinates& from, Player player);
-        static std::vector<Move> CanBishopTargetSquare(const Board& board, const Coordinates& from, Player player);
-        static std::vector<Move> CanRookTargetSquare(const Board& board, const Coordinates& from, Player player);
-        static std::vector<Move> CanQueenTargetSquare(const Board& board, const Coordinates& from, Player player);
-        static std::vector<Move> CanKingTargetSquare(const Board& board, const Coordinates& from, Player player);
+        static std::vector<Move> CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
+        static std::vector<Move> CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
+        static std::vector<Move> CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
+        static std::vector<Move> CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
+        static std::vector<Move> CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
+        static std::vector<Move> CanKingTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
 
     };
 } // chess
