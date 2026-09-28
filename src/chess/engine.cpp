@@ -116,8 +116,16 @@ namespace chess {
 
 
     bool Engine::CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+        Coordinates left = {.row = 0, .column = -1};
+        Coordinates right = {.row = 0, .column = 1};
 
+        left += GetPawnMoveDirection(player);
+        right += GetPawnMoveDirection(player);
+
+        const Coordinates diff = target - from;
+        return diff == left || diff == right;
     }
+
     bool Engine::CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
         const Coordinates diff = target - from;
 
@@ -126,12 +134,15 @@ namespace chess {
 
         return std::max(dy, dx) == 2 && std::min(dy, dx) == 1;
     }
+
     bool Engine::CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
 
     }
+
     bool Engine::CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
 
     }
+
     bool Engine::CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
 
     }
