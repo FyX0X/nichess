@@ -137,6 +137,37 @@ namespace chess {
 
     bool Engine::CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
 
+        const bool diagonal_up_left = (target.row + target.column) == (from.row + from.column);
+        const bool diagonal_up_right = (target.row - target.column) == (from.row - from.column);
+
+        if (diagonal_up_left == diagonal_up_right) { // either both false (cannot target) or both true (cannot protect own square).
+            return  false;
+        }
+
+        Coordinates direction;
+
+        if (diagonal_up_left) {
+            const int dy = target.row > from.row ? 1 : -1;
+            direction = {.row = dy, .column = -dy};
+        } else {
+            const int dy = target.row > from.row ? 1 : -1;
+            direction = {.row = dy, .column = dy};
+        }
+
+        Coordinates square = from + direction;
+        while (square.IsValid()) {
+
+            if (square == target) {
+                return true;
+            }
+
+            if (!board.GetPiece(square).IsEmpty()) {
+                break;
+            }
+
+            square += direction;
+        }
+        return false;
     }
 
     bool Engine::CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
