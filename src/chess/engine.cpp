@@ -53,12 +53,6 @@ namespace chess {
 
 
 
-    bool Engine::DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& coordinates) {
-        // TODO
-        return false;
-    }
-
-    // TODO
     bool Engine::IsPlayerInCheck(const Board &board, const Player &player) {
 
         Coordinates king_coordinates = {.row = -1, .column = -1};
@@ -72,6 +66,50 @@ namespace chess {
         assert(king_coordinates.IsValid() && "Player should always have a king!");
 
         return DoesPlayerTargetSquare(board, GetOtherPlayer(player), king_coordinates);
+    }
+
+
+
+    bool Engine::DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& target) {
+
+
+        for (const Coordinates& coord : board.GetPlayerOccupiedSquares(player)) {
+            bool does_piece_attack_target = false;
+            Piece piece = board.GetPiece(coord);
+
+            switch (piece.type) {
+                case PieceType::Pawn:
+                    does_piece_attack_target = CanPawnTargetSquare(board, coord, target, player);
+                    break;
+                case PieceType::Knight:
+                    does_piece_attack_target = CanKnightTargetSquare(board, coord, target, player);
+                    break;
+                case PieceType::Bishop:
+                    does_piece_attack_target = CanBishopTargetSquare(board, coord, target, player);
+                    break;
+                case PieceType::Rook:
+                    does_piece_attack_target = CanRookTargetSquare(board, coord, target, player);
+                    break;
+                case PieceType::Queen:
+                    does_piece_attack_target = CanQueenTargetSquare(board, coord, target, player);
+                    break;
+                case PieceType::King:
+                    does_piece_attack_target = CanKingTargetSquare(board, coord, target, player);
+                    break;
+                case PieceType::None:
+                default:
+                    assert(false && "Invalid Piece in DoesPlayerTargetSquare()");
+                    return false;
+            }
+
+            if (does_piece_attack_target) {
+                return true;
+            }
+
+        }
+
+
+        return false;
     }
 
 
