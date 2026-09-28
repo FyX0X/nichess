@@ -19,6 +19,16 @@ namespace chess {
         int column = 0;
 
         bool operator==(const Coordinates&) const = default;
+
+        Coordinates operator-(const Coordinates& rhs) const {
+            return { .row = row - rhs.row, .column = column - rhs.column};
+        }
+        Coordinates &operator-=(const Coordinates & rhs) {
+            row -= rhs.row;
+            column -= rhs.column;
+            return *this;
+        }
+
         Coordinates operator+(const Coordinates& rhs) const {
             return { .row = row + rhs.row, .column = column + rhs.column};
         }
