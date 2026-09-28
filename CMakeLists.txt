@@ -7,8 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 add_executable(nichess src/main.cpp
-        src/chess/position.cpp
-        src/chess/position.h
+        src/chess/board.cpp
         src/chess/piece.h
         src/chess/piece.cpp
         src/notation/fen.cpp
@@ -25,6 +24,10 @@ add_executable(nichess src/main.cpp
         src/chess/move.cpp
         src/chess/perft.cpp
         src/chess/perft.h
+        src/chess/engine.cpp
+        src/chess/engine.h
+        src/chess/utility.cpp
+        src/chess/utility.h
 )
 
 

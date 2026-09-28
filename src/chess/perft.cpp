@@ -4,10 +4,15 @@
 
 #include "perft.h"
 
+#include <cassert>
+
 #include "move.h"
 
 #include <chrono>
 #include <print>
+
+#include "utility.h"
+#include "chess/engine.h"
 
 namespace chess {
 
@@ -43,19 +48,20 @@ namespace chess {
             return 1ULL;
         }
 
-        std::vector<Move> move_list = position_.GetActivePlayerMoves();
+        std::vector<Move> move_list = Engine::GetPseudoLegalMoves(position_);
         int n_moves = move_list.size();
         uint64_t nodes = 0;
 
         IrreversibleAspects irreversible_aspects = position_.GetIrreversibleAspects();
 
         for (int i = 0; i < n_moves; i++) {
-            if (!position_.MakeLegalMove(move_list[i])) {
+            position_.MakeMove(move_list[i]);
+            if (!Engine::IsPlayerInCheck(position_, GetOtherPlayer(position_.GetActivePlayer()))) {
+                nodes += PerftRecursive(depth - 1);
+            } else {
                 Move move = move_list[i];
-                std::println("[ERROR] PerftRecursive: move {}->{} is not legal", move.from, move.to);
-                continue;
-            };
-            nodes += PerftRecursive(depth - 1);
+                std::println("[Info] PerftRecursive: move {}->{} is not legal", move.from, move.to);
+            }
             position_.UnmakeMove(move_list[i], irreversible_aspects);
         }
 

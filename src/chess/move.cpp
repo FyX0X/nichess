@@ -22,6 +22,17 @@ namespace chess {
         return move.from == from && move.to == to && (move.capture_type != PieceType::None) == capture && move.promotion_type == promotion_type;
     }
 
+    std::optional<Move> MoveLAN::GetCorrespondingMove(const std::vector<Move> &moves) const {
+
+        for (const Move& move : moves) {
+            if (Matches(move)) {
+                return std::optional<Move>{move};
+            }
+        }
+
+        return std::nullopt;
+    }
+
     std::string MoveLAN::ToLongAlgebraicNotation() const {
         std::string piece_char = (moving_piece == PieceType::Pawn) ? "" : std::format("{}", std::to_underlying(moving_piece));
         char capture_char = (capture) ? 'x' : '-';

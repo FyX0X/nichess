@@ -1,24 +1,24 @@
 #include <iostream>
 #include <print>
 
-#include "chess/position.h"
+#include "chess/board.h"
 #include "notation/fen.h"
 #include "utility/ranges_utils.h"
 #include "chess/perft.h"
-
+#include "chess/engine.h"
 
 constexpr bool kDoPerft = true;
 constexpr bool kDoPlayGame = false;
 
 
-static void GameInfo(const chess::Position& position) {
+static void GameInfo(const chess::Board& position) {
     std::println("Game Info: \n\n{}", position.ToString());
     std::println("Encoded FEN: {}", notation::fen::Encode(position));
-    const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
+    const std::vector<chess::Move>& moves =  chess::Engine::GetPseudoLegalMoves(position);
     std::println("move count= {}", moves.size());
 
-    std::println("{}", position.GetTargetedSquaresString(chess::Player::White));
-    std::println("{}", position.GetTargetedSquaresString(chess::Player::Black));
+    /*std::println("{}", position.GetTargetedSquaresString(chess::Player::White));
+    std::println("{}", position.GetTargetedSquaresString(chess::Player::Black));*/
 }
 
 static void GameInfoFEN(std::string_view fen) {
@@ -45,15 +45,16 @@ static void TestCoordinatesConvertion() {
 }
 
 static void TestPerft() {
-    chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
+    chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(2);
+    perft.PerformPerftAndPrintInfo(4);
 }
 
 static void PlayGame() {
-    chess::Position position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
 
-    chess::Move move(chess::Coordinates{}, chess::Coordinates{});
+    chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
+
+    // chess::Move move(chess::Coordinates{}, chess::Coordinates{});
     std::vector<chess::Move> played_moves;
     std::vector<chess::IrreversibleAspects> irreversible_stack;
     irreversible_stack.push_back(position.GetIrreversibleAspects());
@@ -61,7 +62,7 @@ static void PlayGame() {
     std::println("{}", position.ToString());
     std::string input;
     while (true) {
-        const std::vector<chess::Move>& moves = position.GetActivePlayerMoves();
+        const std::vector<chess::Move>& moves = chess::Engine::GetPseudoLegalMoves(position);
         if (moves.empty()) {
             std::println("no more playable moves");
             break;
@@ -98,10 +99,14 @@ static void PlayGame() {
             std::println("Unrecognized lan format: {}\t\t('q' to quit)", input);
             continue;
         }
-        if ( !position.MakeLegalMoveLAN(move_lan.value(), move)) {
+        std::optional<chess::Move> corresponding_move = move_lan.value().GetCorrespondingMove(moves);
+
+        if (!corresponding_move.has_value()) {
             std::println("Illegal move: {}", move_lan.value().ToLongAlgebraicNotation());
             continue;
         }
+        chess::Move move = corresponding_move.value();
+        position.MakeMove(move);
         std::println("main(): move: {} -> {}", move.from, move.to);
         played_moves.push_back(move);
         irreversible_stack.push_back(position.GetIrreversibleAspects());

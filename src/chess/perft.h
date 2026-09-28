@@ -6,14 +6,14 @@
 #define NICHESS_PERFT_H
 
 
-#include "position.h"
+#include "board.h"
 
 namespace chess {
 
     class Perft {
 
     public:
-        Perft(const Position& starting_position) :
+        Perft(const Board& starting_position) :
             starting_position_(starting_position),
             position_(starting_position)
             {}
@@ -26,8 +26,8 @@ namespace chess {
         
         uint64_t PerftRecursive(int depth);
 
-        const Position starting_position_;
-        Position position_;
+        const Board starting_position_;
+        Board position_;
 
 
     };

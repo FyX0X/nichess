@@ -15,10 +15,10 @@ namespace notation::fen {
 #pragma region Forward Declarations
 
     static std::string getPlacementRow(const std::array<chess::Piece, 8>& row);
-    static std::string GetPlacementSection(const chess::Position& position);
-    static char GetActivePlayerSection(const chess::Position& position);
-    static std::string GetCastlingSection(const chess::Position& position);
-    static std::string GetEnPassantSection(const chess::Position& position);
+    static std::string GetPlacementSection(const chess::Board& Board);
+    static char GetActivePlayerSection(const chess::Board& Board);
+    static std::string GetCastlingSection(const chess::Board& Board);
+    static std::string GetEnPassantSection(const chess::Board& Board);
 
     static std::array<chess::Piece, 8> ParsePlacementRow(std::string_view placement_row);
     static std::array<std::array<chess::Piece, 8>, 8> ParsePlacementSection(std::string_view placement_section);
@@ -28,18 +28,18 @@ namespace notation::fen {
 
 #pragma endregion
 
-    std::string Encode(const chess::Position& position) {
+    std::string Encode(const chess::Board& Board) {
         return std::format("{} {} {} {} {} {}",
-            GetPlacementSection(position),
-            GetActivePlayerSection(position),
-            GetCastlingSection(position),
-            GetEnPassantSection(position),
-            position.GetHalfMoveClock(),
-            position.GetMoveCount()
+            GetPlacementSection(Board),
+            GetActivePlayerSection(Board),
+            GetCastlingSection(Board),
+            GetEnPassantSection(Board),
+            Board.GetHalfMoveClock(),
+            Board.GetMoveCount()
             );
     }
 
-    std::optional<chess::Position> Decode(std::string_view fen) {
+    std::optional<chess::Board> Decode(std::string_view fen) {
         // split each sections into tokens
         std::vector<std::string_view> tokens = utility::strings::Tokenize(fen, ' ');
 
@@ -48,7 +48,7 @@ namespace notation::fen {
             return std::nullopt;
         }
 
-        chess::Position position {
+        chess::Board Board {
             ParsePlacementSection(tokens[0]),
             ParseActivePlayerSection(tokens[1]),
             ParseCastlingSection(tokens[2]),
@@ -57,7 +57,7 @@ namespace notation::fen {
             std::stoi(std::string(tokens[5]))
         };
 
-        return std::make_optional(position);
+        return std::make_optional(Board);
     }
 
 
@@ -87,24 +87,24 @@ namespace notation::fen {
         return row_stream.str();
     }
 
-    static std::string GetPlacementSection(const chess::Position& position) {
+    static std::string GetPlacementSection(const chess::Board& Board) {
 
         std::stringstream section_stream;
-        section_stream << getPlacementRow(position.GetRow(7));
+        section_stream << getPlacementRow(Board.GetRow(7));
         for (int i = 6; i >= 0; --i) {
-            section_stream << '/' << getPlacementRow(position.GetRow(i));
+            section_stream << '/' << getPlacementRow(Board.GetRow(i));
         }
 
         return section_stream.str();
     }
 
-    static char GetActivePlayerSection(const chess::Position& position) {
-        return position.GetActivePlayer() == chess::Player::White ? 'w' : 'b';
+    static char GetActivePlayerSection(const chess::Board& Board) {
+        return Board.GetActivePlayer() == chess::Player::White ? 'w' : 'b';
     }
 
-    static std::string GetCastlingSection(const chess::Position& position) {
+    static std::string GetCastlingSection(const chess::Board& Board) {
         std::string castling_section = "";
-        chess::CastlingRights castling_rights = position.GetCastlingRights();
+        chess::CastlingRights castling_rights = Board.GetCastlingRights();
         if (castling_rights.white_kingside) {
             castling_section += 'K';
         }
@@ -124,8 +124,8 @@ namespace notation::fen {
         return castling_section;
     }
 
-    static std::string GetEnPassantSection(const chess::Position& position) {
-        std::optional<chess::Coordinates> en_passant = position.GetEnPassant();
+    static std::string GetEnPassantSection(const chess::Board& Board) {
+        std::optional<chess::Coordinates> en_passant = Board.GetEnPassant();
         if (en_passant.has_value()) {
             return en_passant.value().ToString();
         }

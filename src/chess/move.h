@@ -55,6 +55,8 @@ namespace chess {
          */
         [[nodiscard]] bool Matches(const Move& move) const;
 
+        [[nodiscard]] std::optional<Move> GetCorrespondingMove(const std::vector<Move>& moves) const;
+
         [[nodiscard]] std::string ToLongAlgebraicNotation() const;
 
         /**
