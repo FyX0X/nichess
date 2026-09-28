@@ -115,7 +115,7 @@ namespace chess {
 
 
 
-    bool Engine::CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+    bool Engine::CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
         Coordinates left = {.row = 0, .column = -1};
         Coordinates right = {.row = 0, .column = 1};
 
@@ -126,7 +126,7 @@ namespace chess {
         return diff == left || diff == right;
     }
 
-    bool Engine::CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+    bool Engine::CanKnightTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
         const Coordinates diff = target - from;
 
         const int dy = abs(diff.row);
@@ -135,7 +135,7 @@ namespace chess {
         return std::max(dy, dx) == 2 && std::min(dy, dx) == 1;
     }
 
-    bool Engine::CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+    bool Engine::CanBishopTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
 
         const bool diagonal_up_left = (target.row + target.column) == (from.row + from.column);
         const bool diagonal_up_right = (target.row - target.column) == (from.row - from.column);
@@ -170,10 +170,10 @@ namespace chess {
         return false;
     }
 
-    bool Engine::CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+    bool Engine::CanRookTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
 
-        bool same_column = target.column == from.column;
-        bool same_row = target.row == from.row;
+        const bool same_column = target.column == from.column;
+        const bool same_row = target.row == from.row;
 
         if (same_column == same_row) { // either both false (cannot target) or both true (cannot protect own square).
             return  false;
@@ -205,11 +205,11 @@ namespace chess {
         return false;
     }
 
-    bool Engine::CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
-
+    bool Engine::CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
+        return CanRookTargetSquare(board, from, target, player) || CanBishopTargetSquare(board, from, target, player);
     }
 
-    bool Engine::CanKingTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player) {
+    bool Engine::CanKingTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
         Coordinates diff = target - from;
 
         return abs(diff.row) <= 1 && abs(diff.column) <= 1;
