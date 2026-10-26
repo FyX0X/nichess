@@ -385,7 +385,7 @@ namespace chess {
         for (Coordinates take_direction : take_directions) {
             to = from + take_direction;
             if (!to.IsValid()) {
-                break;
+                continue;
             }
             bool is_en_passant = en_passant.has_value() && en_passant.value() == to;
             Piece target_piece = board.GetPiece(to);
@@ -473,7 +473,7 @@ namespace chess {
             bool castle_available = true;
             for (int col = 3; col > 0; --col) {
                 Coordinates coords = { .row = from.row, .column = col };
-                if (!board.GetPiece(coords).IsEmpty() || DoesPlayerTargetSquare(board, GetOtherPlayer(player), coords)) {
+                if (!board.GetPiece(coords).IsEmpty() || (col > 1 && DoesPlayerTargetSquare(board, GetOtherPlayer(player), coords))) {
                     castle_available = false;
                     break;
                 }
