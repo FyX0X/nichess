@@ -51,4 +51,25 @@ namespace chess {
 
         return { .type = type, .player = player };
     }
+
+
+    int Piece::GetValue() const {
+        switch (type) {
+            case PieceType::None:
+                return 0;
+            case PieceType::Pawn:
+                return 1;
+            case PieceType::Knight:
+                return 3;
+            case PieceType::Bishop:
+                return 3;
+            case PieceType::Rook:
+                return 5;
+            case PieceType::Queen:
+                return 9;
+            case PieceType::King:
+                return 0;
+        }
+        return 0;
+    }
 } // chess
