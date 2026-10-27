@@ -21,6 +21,8 @@ namespace chess {
 
         /* Returns if the player controls this square, by convention: a piece does not control it's own square. */
         static bool DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& target);
+
+        static Move SearchBestMove(const Board& board);
     private:
 
 
@@ -44,6 +46,14 @@ namespace chess {
         static bool CanQueenTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
         static bool CanKingTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
 
+        // search
+        static float Negamax(Board& node, int depth);
+
+        static float EvaluateEndScore(const Board &board);
+        static float EvaluateHeuristic(const Board& board);
+
+        static std::vector<Move> GetOpponentLegalMoves(const Board & board);
+        static int DoubledBackwardIsolatedCount(const Board &board, Player player);
     };
 } // chess
 

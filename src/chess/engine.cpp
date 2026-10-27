@@ -113,8 +113,6 @@ namespace chess {
         return false;
     }
 
-
-
     bool Engine::CanPawnTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, const Player player) {
         Coordinates left = {.row = 0, .column = -1};
         Coordinates right = {.row = 0, .column = 1};
@@ -253,6 +251,37 @@ namespace chess {
             copy.UnmakeMove(move, aspects);
         }
         return legal_moves;
+    }
+
+    std::vector<Move> Engine::GetOpponentLegalMoves(const Board &board) {
+        Board copy = board;
+        copy.SwitchPlayer();
+        return GetPseudoLegalMoves(copy);
+    }
+
+
+    Move Engine::SearchBestMove(const Board &board) {
+        const std::vector<Move> moves = GetLegalMoves(board); // TODO switch to pseudo ?
+
+        Move best_move;
+        float best_evaluation = -std::numeric_limits<float>::infinity();
+
+        Board copy = board;
+
+        const IrreversibleAspects aspects = copy.GetIrreversibleAspects();
+
+        for (const Move& move : moves) {
+            copy.MakeMove(move);
+            const float evaluation = Negamax(copy, 4);
+            copy.UnmakeMove(move, aspects);
+
+            if (evaluation > best_evaluation) {
+                best_evaluation = evaluation;
+                best_move = move;
+            }
+        }
+
+        return best_move;
     }
 
 
@@ -511,6 +540,160 @@ namespace chess {
         }
 
         return moves;
+    }
+
+#pragma endregion
+
+
+#pragma region Search
+
+    /*function negamax(node, depth) is
+    if depth = 0 or node is a terminal node then
+        return evaluatePosition() // From current player's perspective
+    value := −∞
+    for each child of node do
+        value := max(value, −negamax(child, depth − 1))
+    return value*/
+
+    float Engine::Negamax(Board &node, const int depth) {
+
+        const std::vector<Move> moves = GetLegalMoves(node);
+
+        if (moves.empty()) {
+            return EvaluateEndScore(node);
+        }
+        if (depth == 0) {
+            return EvaluateHeuristic(node);
+        }
+
+        float value = -std::numeric_limits<float>::infinity();
+        const IrreversibleAspects aspects = node.GetIrreversibleAspects();
+        for (const Move& move : moves) {
+            node.MakeMove(move);
+            value = std::max(value, -Negamax(node, depth - 1));
+            node.UnmakeMove(move, aspects);
+        }
+        return value;
+    }
+
+    /**
+     * Compute the position score from the current player POV at the end of the game
+     * @param board
+     * @return
+     */
+    float Engine::EvaluateEndScore(const Board &board) {
+        if (IsPlayerInCheck(board, board.GetActivePlayer())) {
+            return -std::numeric_limits<float>::infinity(); // in check and no available move => just got checkmated
+        }
+
+        return 0; // stalemate
+
+    }
+
+    /**
+     * Compute the position score from the current player POV using following
+     * Claude Shannon's heuristic (modified):
+     * f(p) = 9(Q-Q')
+     *      + 5(R-R')
+     *      + 3(B-B' + N-N')
+     *      + 1(P-P')
+     *      - 0.5(D-D' + S-S' + I-I')
+     *      + 0.1(M-M') + ...
+     *
+     * KQRBNP = number of kings, queens, rooks, bishops, knights and pawns
+     * D,S,I = doubled, backward and isolated pawns
+     * M = Mobility (the number of legal moves)
+     * @param board The board to evaluate
+     * @return the computed score.
+     */
+    float Engine::EvaluateHeuristic(const Board &board) {
+        const Player player = board.GetActivePlayer();
+        const Player other_player = GetOtherPlayer(player);
+
+        float score = 0;
+
+        for (const Coordinates& coord : board.GetPlayerOccupiedSquares(player)) {
+            score += static_cast<float>(board.GetPiece(coord).GetValue());
+        }
+        for (const Coordinates& coord : board.GetPlayerOccupiedSquares(player)) {
+            score -= static_cast<float>(board.GetPiece(coord).GetValue());
+        }
+
+        score -= 0.5f * static_cast<float>(DoubledBackwardIsolatedCount(board, player) - DoubledBackwardIsolatedCount(board, other_player));
+        score += 0.1f * static_cast<float>(GetLegalMoves(board).size() - GetOpponentLegalMoves(board).size());
+
+        return score;
+    }
+
+    int Engine::DoubledBackwardIsolatedCount(const Board &board, const Player player) {
+        int pawns_per_col[8] = {0};
+        int least_advanced_row[8];
+        for (int &row : least_advanced_row) {
+            row = player == Player::White ? 7 : 0;
+        }
+
+        const Coordinates dir = GetPawnMoveDirection(player);
+
+        std::vector<Coordinates> pawns_coords;
+
+        for (const Coordinates& coord : board.GetPlayerOccupiedSquares(player)) {
+            if (board.GetPiece(coord).type != PieceType::Pawn) {
+                continue;
+            }
+
+            pawns_per_col[coord.column]++;
+            pawns_coords.push_back(coord);
+
+            if (player == Player::White) {
+                least_advanced_row[coord.column] = std::min(least_advanced_row[coord.column], coord.row);
+            } else {
+                least_advanced_row[coord.column] = std::max(least_advanced_row[coord.column], coord.row);
+            }
+        }
+
+        int doubled = 0;
+        for (const int pawns : pawns_per_col) {
+            doubled += pawns > 1;
+        }
+
+
+        int backward = 0;
+        for (const Coordinates& coord : pawns_coords) {
+
+            // check if the pawn is blocked.
+            const Coordinates front = coord + dir;
+            if (!board.GetPiece(front).IsEmpty() || DoesPlayerTargetSquare(board, GetOtherPlayer(player), front)) {
+                // pawn is blocked.
+
+                // is it backward ?
+                const int row = coord.row;
+
+                const bool does_left_pawn_exists = coord.column > 0 && pawns_per_col[coord.column - 1] > 0; // must exist to be ahead
+                const bool does_right_pawn_exists = coord.column < 7 && pawns_per_col[coord.column + 1] > 0; // must exist to be ahead
+                bool is_left_ahead;
+                bool is_right_ahead;
+                if (player == Player::White) {
+                    is_left_ahead = does_left_pawn_exists && least_advanced_row[coord.column - 1] > row;
+                    is_right_ahead = does_right_pawn_exists && least_advanced_row[coord.column + 1] > row;
+                } else {
+                    is_left_ahead = does_left_pawn_exists && least_advanced_row[coord.column - 1] < row;
+                    is_right_ahead = does_right_pawn_exists && least_advanced_row[coord.column + 1] < row;
+                }
+
+                if (is_left_ahead && is_right_ahead) {
+                    backward++;
+                }
+            }
+        }
+
+        int isolated = 0;
+        isolated += (pawns_per_col[0] > 0 && pawns_per_col[1] == 0) ? pawns_per_col[0] : 0;
+        isolated += (pawns_per_col[7] > 0 && pawns_per_col[6]== 0) ? pawns_per_col[7] : 0;
+        for (int col = 1; col < 7; ++col) {
+            isolated += (pawns_per_col[col] > 0 && pawns_per_col[col - 1] == 0 && pawns_per_col[col + 1] == 0) ? pawns_per_col[col] : 0;
+        }
+
+        return doubled + backward + isolated;
     }
 
 #pragma endregion
