@@ -15,6 +15,7 @@
 #include "move.h"
 #include "castling_rights.h"
 #include "irreversible_aspects.h"
+#include "utility.h"
 
 namespace chess {
 
@@ -59,6 +60,7 @@ namespace chess {
         void MakeMove(const Move& move);
         void UnmakeMove(const Move& move, const IrreversibleAspects& prev_aspects);
 
+        void SwitchPlayer() { active_player_ = GetOtherPlayer(active_player_); }
 
 
     private:
