@@ -43,10 +43,10 @@ namespace chess {
         uint64_t nodes = PerftAtDepth(depth);
         auto end_time = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_time = end_time - start_time;
-        std::print("Perft completed:\nNodes:\t{}\nTime taken:\t{:.6f} seconds.\nNodes per second:\t{:.2f}\n", nodes,
+        std::print("\r\033[KPerft completed:\nNodes:   \t{}\nTime taken:\t{:.6f} seconds.\nNodes/second:\t{:.2f}\n", nodes,
                    elapsed_time.count(), static_cast<double>(nodes) / elapsed_time.count());
 
-        std::println("Perft Statistics:\nEn Passant\t{}\nCastles \t{}\nPromotions\t{}\nchecks\t{}\ncaptures:\t{}",
+        std::println("En Passant\t{}\nCastles \t{}\nPromotions\t{}\nchecks  \t{}\ncaptures:\t{}",
             en_passant_count, castle_count, promotion_count, check_count, capture_count);
 
     }
@@ -56,7 +56,8 @@ namespace chess {
         if (depth == 0) {
             nodes_count++;
             if ((nodes_count & (nodes_count-1)) == 0) {
-                std::println("[INFO] Perft: Generated {} moves...", nodes_count);
+                std::print("\r\033[K[PROGRESS] Perft: Generated {} nodes...", nodes_count);
+                std::fflush(stdout);
             }
             return 1ULL;
         }
@@ -79,8 +80,8 @@ namespace chess {
                 promotion_count += (move.promotion_type != PieceType::None) ? 1 : 0;
                 check_count += (Engine::IsPlayerInCheck(position_, player)) ? 1 : 0;
 
-            } else {
-                std::println("[Info] PerftRecursive: move {}->{} is not legal", move.from, move.to);
+            // } else {
+            //     std::println("[Info] PerftRecursive: move {}->{} is not legal", move.from, move.to);
             }
             position_.UnmakeMove(move_list[i], irreversible_aspects);
         }

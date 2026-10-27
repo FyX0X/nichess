@@ -44,10 +44,10 @@ static void TestCoordinatesConvertion() {
     }
 }
 
-static void TestPerft() {
+static void TestPerft(int depth) {
     chess::Board position = notation::fen::Decode(notation::fen::kDefaultFEN).value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(3);
+    perft.PerformPerftAndPrintInfo(depth);
 }
 
 static void PlayGame() {
@@ -149,7 +149,7 @@ int main() {
     perft.PerformPerftAndPrintInfo(2);
 
     if (kDoPerft) {
-        TestPerft();
+        TestPerft(6);
     }
 
     if (kDoPlayGame) {
