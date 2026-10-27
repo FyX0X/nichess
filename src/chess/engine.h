@@ -22,7 +22,7 @@ namespace chess {
         /* Returns if the player controls this square, by convention: a piece does not control it's own square. */
         static bool DoesPlayerTargetSquare(const Board& board, const Player& player, const Coordinates& target);
 
-        static Move SearchBestMove(const Board& board);
+        static std::optional<Move> SearchBestMove(const Board& board);
     private:
 
 

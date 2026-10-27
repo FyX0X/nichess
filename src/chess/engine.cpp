@@ -260,10 +260,10 @@ namespace chess {
     }
 
 
-    Move Engine::SearchBestMove(const Board &board) {
+    std::optional<Move> Engine::SearchBestMove(const Board &board) {
         const std::vector<Move> moves = GetLegalMoves(board); // TODO switch to pseudo ?
 
-        Move best_move;
+        std::optional<Move> best_move = std::nullopt;
         float best_evaluation = -std::numeric_limits<float>::infinity();
 
         Board copy = board;

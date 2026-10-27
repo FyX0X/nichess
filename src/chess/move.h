@@ -32,6 +32,8 @@ namespace chess {
 
         bool operator==(const Move&) const = default;
 
+        [[nodiscard]] std::string ToUCINotation() const;
+
         [[nodiscard]] std::string ToString() const;
     };
 

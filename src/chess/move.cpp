@@ -12,6 +12,11 @@
 
 namespace chess {
 
+    std::string Move::ToUCINotation() const {
+        std::string promotion_char = (promotion_type == PieceType::None) ? "" : std::format("{}", std::to_underlying(promotion_type));
+        return std::format("{}{}{}", from, to, promotion_char);
+    }
+
     std::string Move::ToString() const {
         char capture_char = capture_type != PieceType::None ? 'x' : '-';
         std::string promotion_char = (promotion_type == PieceType::None) ? "" : std::format("{}", std::to_underlying(promotion_type));

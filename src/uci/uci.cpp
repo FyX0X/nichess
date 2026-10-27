@@ -19,8 +19,8 @@
 namespace uci {
 
 
-    static chess::Board ParsePositionCommand(std::vector<std::string_view> arguments);
-    static void ParseGoCommand(std::vector<std::string_view> arguments, chess::Board& board);
+    static chess::Board ParsePositionCommand(const std::vector<std::string_view>& arguments);
+    static void ParseGoCommand(const std::vector<std::string_view>& arguments, chess::Board& board);
     static void PrintHelp();
 
 
@@ -61,7 +61,7 @@ namespace uci {
         }
     }
 
-    static chess::Board ParsePositionCommand(std::vector<std::string_view> arguments) {
+    static chess::Board ParsePositionCommand(const std::vector<std::string_view>& arguments) {
         
         assert(!arguments.empty());
 
@@ -113,14 +113,13 @@ namespace uci {
     }
 
 
-    static void ParseGoCommand(std::vector<std::string_view> arguments, chess::Board& board) {
-        std::vector<chess::Move> legal_moves = chess::Engine::GetLegalMoves(board);
-        if (legal_moves.empty()) {
+    static void ParseGoCommand(const std::vector<std::string_view>& arguments, chess::Board& board) {
+        std::optional<chess::Move> best_move = chess::Engine::SearchBestMove(board);
+        if (!best_move.has_value()) {
             std::println("No legal moves available.");
             return;
         }
-        chess::Move best_move = legal_moves[0]; // TODO implement search for best move.
-        std::println("bestmove {}", chess::MoveLAN{.from = best_move.from, .to = best_move.to, .capture = best_move.capture_type != chess::PieceType::None, .promotion_type = best_move.promotion_type}.ToUCINotation());
+        std::println("bestmove {}", best_move.value().ToUCINotation());
         // bestmove <move> ponder <expected> // pondering not implemented yet.
     }
 
