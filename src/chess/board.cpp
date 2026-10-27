@@ -41,6 +41,17 @@ namespace chess {
         RecomputeRemainingPieces();
     }
 
+    Board::Board(const Board& board) :
+        irreversible_aspects_(board.irreversible_aspects_),
+        board_(board.board_),
+        active_player_(board.active_player_),
+        move_count_(board.move_count_) {
+
+        EnsureLegalEnPassantSquare();
+        EnsurePossibleCastlingRights();
+        RecomputeRemainingPieces();
+    }
+
     std::string Board::ToString() const {
         const std::optional<Coordinates>& en_passant = GetEnPassant();
 
@@ -231,6 +242,18 @@ namespace chess {
 
         if (capture_type != PieceType::None) {
             new_aspects.half_move_clock = 0;
+
+            if (target_piece.type == PieceType::Rook) {
+                if (to == kWhiteRookKingsideSquare) {
+                    new_aspects.castling_rights.white_kingside = false;
+                } else if (to == kWhiteRookQueensideSquare) {
+                    new_aspects.castling_rights.white_queenside = false;
+                } else if (to == kBlackRookKingsideSquare) {
+                    new_aspects.castling_rights.black_kingside = false;
+                } else if (to == kBlackRookQueensideSquare) {
+                    new_aspects.castling_rights.black_queenside = false;
+                }
+            }
         }
 
         if (en_passant) {

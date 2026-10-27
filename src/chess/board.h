@@ -29,6 +29,8 @@ namespace chess {
                  int half_move_clock,
                  int move_count);
 
+        Board(const Board& board);
+
         [[nodiscard]] std::string ToString() const;
 
         // getters

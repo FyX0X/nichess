@@ -234,6 +234,27 @@ namespace chess {
         return moves;
     }
 
+    std::vector<Move> Engine::GetLegalMoves(const Board& board) {
+        const std::vector<Move> pseudo_legal_moves = GetPseudoLegalMoves(board);
+        std::vector<Move> legal_moves;
+        legal_moves.reserve(pseudo_legal_moves.size());
+
+        Board copy = board;
+
+        Player other = GetOtherPlayer(copy.GetActivePlayer());
+        IrreversibleAspects aspects = copy.GetIrreversibleAspects();
+
+        for (const Move move : pseudo_legal_moves)
+        {
+            copy.MakeMove(move);
+            if (!Engine::IsPlayerInCheck(copy, other)) { 
+                legal_moves.push_back(move);
+            }
+            copy.UnmakeMove(move, aspects);
+        }
+        return legal_moves;
+    }
+
 
 
     std::vector<Move> Engine::GeneratePseudoLegalMovesFromCoordinates(const Board& board, const Coordinates &from, Player player) {
@@ -438,6 +459,9 @@ namespace chess {
         Coordinates from = { .row = GetPieceStartingRank(player), .column = 4 };
 
         Piece king = board.GetPiece(from);
+        if (DoesPlayerTargetSquare(board, GetOtherPlayer(player), from)) {
+            return moves;
+        }
 
         // std::println("generate castle moves, current opponent reach = {}",
         //     GetReachableSquaresString(GetOtherPlayer(player)));

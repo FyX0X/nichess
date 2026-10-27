@@ -74,11 +74,13 @@ namespace chess {
             Player player = position_.GetActivePlayer();
             if (!Engine::IsPlayerInCheck(position_, GetOtherPlayer(player))) {
                 nodes += PerftRecursive(depth - 1);
-                capture_count += (move.capture_type != PieceType::None) ? 1 : 0;
-                en_passant_count += (move.en_passant) ? 1 : 0;
-                castle_count += (move.castle_kingside || move.castle_queenside) ? 1 : 0;
-                promotion_count += (move.promotion_type != PieceType::None) ? 1 : 0;
-                check_count += (Engine::IsPlayerInCheck(position_, player)) ? 1 : 0;
+                if (depth == 1) {
+                    capture_count += (move.capture_type != PieceType::None) ? 1 : 0;
+                    en_passant_count += (move.en_passant) ? 1 : 0;
+                    castle_count += (move.castle_kingside || move.castle_queenside) ? 1 : 0;
+                    promotion_count += (move.promotion_type != PieceType::None) ? 1 : 0;
+                    check_count += (Engine::IsPlayerInCheck(position_, player)) ? 1 : 0;
+                }
 
             // } else {
             //     std::println("[Info] PerftRecursive: move {}->{} is not legal", move.from, move.to);
