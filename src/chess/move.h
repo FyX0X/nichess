@@ -59,6 +59,8 @@ namespace chess {
 
         [[nodiscard]] std::string ToLongAlgebraicNotation() const;
 
+        [[nodiscard]] std::string ToUCINotation() const;
+
         /**
          * <LAN move descriptor piece moves> ::= <Piece symbol><from square>['-'|'x']<to square>
          * <LAN move descriptor pawn moves>  ::= <from square>['-'|'x']<to square>[<promoted to>]
@@ -67,7 +69,19 @@ namespace chess {
          * @return The move id represented the the given string.
          */
         static std::optional<MoveLAN> FromLongAlgebraicNotation(std::string_view lan_str);
+
+        /**
+         * <LAN move descriptor pawn moves>  ::= <from square><to square>[<promoted to>]
+         * @param uci_move a move in UCI format.
+         * @return The move id represented the the given string.
+         */
+        static std::optional<MoveLAN> FromUCINotation(std::string_view uci_move);
+
+
     };
+
+
+
 
 }
 

@@ -6,9 +6,11 @@
 #include "utility/ranges_utils.h"
 #include "chess/perft.h"
 #include "chess/engine.h"
+#include "uci/uci.h"
 
-constexpr bool kDoPerft = true;
+constexpr bool kDoPerft = false;
 constexpr bool kDoPlayGame = false;
+constexpr bool kDoUCI = true;
 
 
 static void GameInfo(const chess::Board& position) {
@@ -146,7 +148,7 @@ int main() {
 
     chess::Board position = notation::fen::Decode("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1").value();
     chess::Perft perft(position);
-    perft.PerformPerftAndPrintInfo(2);
+    perft.PerformPerftAndPrintInfo(2); // TODO check if there is a bug in the code: wrong perft result
 
     if (kDoPerft) {
         TestPerft(6);
@@ -154,6 +156,10 @@ int main() {
 
     if (kDoPlayGame) {
         PlayGame();
+    }
+
+    if (kDoUCI) {
+        uci::RunUCI();
     }
 
     return 0;
