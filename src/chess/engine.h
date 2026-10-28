@@ -47,7 +47,7 @@ namespace chess {
         static bool CanKingTargetSquare(const Board& board, const Coordinates& from, const Coordinates& target, Player player);
 
         // search
-        static float Negamax(Board& node, int depth);
+        static float Negamax(Board& node, int depth, float alpha, float beta);
 
         static float EvaluateEndScore(const Board &board);
         static float EvaluateHeuristic(const Board& board);

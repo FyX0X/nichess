@@ -48,7 +48,7 @@ namespace chess {
         [[nodiscard]] char ToChar() const;
         static Piece FromChar(char c);
 
-        [[nodiscard]] constexpr int GetValue() const;
+        [[nodiscard]] int GetValue() const;
 
         static constexpr Piece Empty() { return { .type = PieceType::None, .player = Player::None }; }
 

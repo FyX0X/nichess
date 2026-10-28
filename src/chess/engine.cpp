@@ -4,6 +4,7 @@
 
 #include "engine.h"
 #include "utility.h"
+#include "piece.h"
 
 #include <cassert>
 #include <print>
@@ -239,13 +240,13 @@ namespace chess {
 
         Board copy = board;
 
-        Player other = GetOtherPlayer(copy.GetActivePlayer());
+        Player player = copy.GetActivePlayer();
         IrreversibleAspects aspects = copy.GetIrreversibleAspects();
 
         for (const Move move : pseudo_legal_moves)
         {
             copy.MakeMove(move);
-            if (!Engine::IsPlayerInCheck(copy, other)) { 
+            if (!Engine::IsPlayerInCheck(copy, player)) {
                 legal_moves.push_back(move);
             }
             copy.UnmakeMove(move, aspects);
@@ -272,7 +273,8 @@ namespace chess {
 
         for (const Move& move : moves) {
             copy.MakeMove(move);
-            const float evaluation = Negamax(copy, 4);
+            constexpr float inf = std::numeric_limits<float>::infinity();
+            const float evaluation = -Negamax(copy, 4, -inf, inf);
             copy.UnmakeMove(move, aspects);
 
             if (evaluation > best_evaluation) {
@@ -547,15 +549,23 @@ namespace chess {
 
 #pragma region Search
 
-    /*function negamax(node, depth) is
+    /*
+    function negamax(node, depth, α, β, color) is
     if depth = 0 or node is a terminal node then
-        return evaluatePosition() // From current player's perspective
-    value := −∞
-    for each child of node do
-        value := max(value, −negamax(child, depth − 1))
-    return value*/
+        return color × the heuristic value of node
 
-    float Engine::Negamax(Board &node, const int depth) {
+    childNodes := generateMoves(node)
+    childNodes := orderMoves(childNodes)
+    value := −∞
+    foreach child in childNodes do
+        value := max(value, −negamax(child, depth − 1, −β, −α, −color))
+        α := max(α, value)
+        if α ≥ β then
+            break (* cut-off *)
+    return value
+    */
+
+    float Engine::Negamax(Board &node, const int depth, float alpha, float beta) {
 
         const std::vector<Move> moves = GetLegalMoves(node);
 
@@ -566,12 +576,18 @@ namespace chess {
             return EvaluateHeuristic(node);
         }
 
-        float value = -std::numeric_limits<float>::infinity();
         const IrreversibleAspects aspects = node.GetIrreversibleAspects();
+
+        float value = -std::numeric_limits<float>::infinity();
         for (const Move& move : moves) {
             node.MakeMove(move);
-            value = std::max(value, -Negamax(node, depth - 1));
+            value = std::max(value, -Negamax(node, depth - 1, -beta, -alpha));
             node.UnmakeMove(move, aspects);
+
+            alpha = std::max(alpha, value);
+            if (alpha >= beta) {
+                break;
+            }
         }
         return value;
     }
@@ -615,12 +631,12 @@ namespace chess {
         for (const Coordinates& coord : board.GetPlayerOccupiedSquares(player)) {
             score += static_cast<float>(board.GetPiece(coord).GetValue());
         }
-        for (const Coordinates& coord : board.GetPlayerOccupiedSquares(player)) {
+        for (const Coordinates& coord : board.GetPlayerOccupiedSquares(other_player)) {
             score -= static_cast<float>(board.GetPiece(coord).GetValue());
         }
 
         score -= 0.5f * static_cast<float>(DoubledBackwardIsolatedCount(board, player) - DoubledBackwardIsolatedCount(board, other_player));
-        score += 0.1f * static_cast<float>(GetLegalMoves(board).size() - GetOpponentLegalMoves(board).size());
+        // score += 0.1f * static_cast<float>(GetLegalMoves(board).size() - GetOpponentLegalMoves(board).size()); TODO  currently disabled for time savings.
 
         return score;
     }
